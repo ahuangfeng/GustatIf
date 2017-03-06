@@ -7,9 +7,9 @@ import fr.insa.gustatif.metier.modele.Client;
 
 public class ClientDAO {
     
-    public void creerClient(Client e) {
+    public void creerClient(Client client) {
         EntityManager em = JpaUtil.obtenirEntityManager();
-        em.persist(e);
+        em.persist(client);
     }
     
     public Client findById(long id) throws Exception {

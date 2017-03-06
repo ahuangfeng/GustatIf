@@ -7,6 +7,11 @@ import fr.insa.gustatif.metier.modele.Produit;
 
 public class ProduitDAO {
     
+    public void creerProduit(Produit produit) {
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        em.persist(produit);
+    }
+
     public Produit findById(long id) throws Exception {
         EntityManager em = JpaUtil.obtenirEntityManager();
         Produit produit = null;
