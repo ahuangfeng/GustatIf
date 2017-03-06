@@ -7,6 +7,13 @@ import fr.insa.gustatif.metier.modele.Restaurant;
 
 public class RestaurantDAO {
     
+    
+    public void creerRestaurant(Restaurant restaurant) {
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        em.persist(restaurant);
+    }
+
+    
     public Restaurant findById(long id) throws Exception {
         EntityManager em = JpaUtil.obtenirEntityManager();
         Restaurant restaurant = null;
