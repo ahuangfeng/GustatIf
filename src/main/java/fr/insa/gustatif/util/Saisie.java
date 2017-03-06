@@ -1,4 +1,4 @@
-package util;
+package fr.insa.gustatif.util;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -1,9 +1,9 @@
-package dao;
+package fr.insa.gustatif.dao;
 
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
-import modele.Produit;
+import fr.insa.gustatif.metier.modele.Produit;
 
 public class ProduitDAO {
     

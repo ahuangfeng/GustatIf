@@ -1,4 +1,4 @@
-package modele;
+package fr.insa.gustatif.metier.modele;
 
 import java.io.Serializable;
 import java.util.ArrayList;

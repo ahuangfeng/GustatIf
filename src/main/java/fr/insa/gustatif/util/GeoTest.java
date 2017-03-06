@@ -1,4 +1,4 @@
-package util;
+package fr.insa.gustatif.util;
 
 import com.google.maps.DirectionsApi;
 import com.google.maps.DirectionsApiRequest;
@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  */
 public class GeoTest {
 
-    final static String MA_CLÉ_GOOGLE_API = "XXXXXXXX-Moodle-Clé";
+    final static String MA_CLÉ_GOOGLE_API = "AIzaSyAhf3JleYpal9S-xouJYH8lf7Dvz5Y2Nko";
 
     final static GeoApiContext MON_CONTEXTE_GEOAPI = new GeoApiContext().setApiKey(MA_CLÉ_GOOGLE_API);
 
