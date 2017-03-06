@@ -26,19 +26,19 @@ public class Main {
         ServiceMetier sm = new ServiceMetier();
         
         // Tests Client
-        sm.creerClient(new Client("1", "2", "3", "4"));
+        //sm.creerClient(new Client("1", "2", "3", "4"));
         for (Client result : sm.recupererClients()) {
             System.out.println(result);
         }
         
         // Tests Produits
-        sm.creerProduit(new Produit("Gros cookie", "Un gros gros gros cookie", 1.4, 2.1));
+        //sm.creerProduit(new Produit("Gros cookie", "Un gros gros gros cookie", 1.4, 2.1));
         for (Produit result : sm.recupererProduits()) {
             System.out.println(result);
         }
         
         // Tests Restaurants
-        sm.creerRestaurant(new Restaurant("Nom","Description","adresse"));
+        //sm.creerRestaurant(new Restaurant("Nom","Description","adresse"));
         for (Restaurant res : sm.recupererRestaurant()) {
             System.out.println(res);
         }
