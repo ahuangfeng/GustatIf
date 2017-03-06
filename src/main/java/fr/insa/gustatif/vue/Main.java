@@ -4,6 +4,7 @@ import fr.insa.gustatif.dao.ClientDAO;
 import fr.insa.gustatif.dao.JpaUtil;
 import fr.insa.gustatif.metier.modele.Client;
 import fr.insa.gustatif.metier.modele.Produit;
+import fr.insa.gustatif.metier.modele.Restaurant;
 import fr.insa.gustatif.metier.service.ServiceMetier;
 import java.util.List;
 import java.util.logging.Level;
@@ -36,6 +37,11 @@ public class Main {
             System.out.println(result);
         }
         
+        // Tests Restaurants
+        sm.creerRestaurant(new Restaurant("Nom","Description","adresse"));
+        for (Restaurant res : sm.recupererRestaurant()) {
+            System.out.println(res);
+        }
         
         JpaUtil.fermerEntityManager();
         JpaUtil.destroy();
