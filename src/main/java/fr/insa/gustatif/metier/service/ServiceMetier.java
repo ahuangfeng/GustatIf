@@ -2,9 +2,11 @@ package fr.insa.gustatif.metier.service;
 
 import fr.insa.gustatif.dao.ClientDAO;
 import fr.insa.gustatif.dao.JpaUtil;
+import fr.insa.gustatif.dao.LivreurDAO;
 import fr.insa.gustatif.dao.ProduitDAO;
 import fr.insa.gustatif.dao.RestaurantDAO;
 import fr.insa.gustatif.metier.modele.Client;
+import fr.insa.gustatif.metier.modele.Livreur;
 import fr.insa.gustatif.metier.modele.Produit;
 import fr.insa.gustatif.metier.modele.Restaurant;
 import java.util.ArrayList;
@@ -64,7 +66,7 @@ public class ServiceMetier {
         return new ArrayList<>();
     }
     
-     public void creerRestaurant(Restaurant restaurant) {
+    public void creerRestaurant(Restaurant restaurant) {
         JpaUtil.ouvrirTransaction();
         
         RestaurantDAO restaurantDAO = new RestaurantDAO();
@@ -81,6 +83,29 @@ public class ServiceMetier {
         RestaurantDAO restaurantDAO = new RestaurantDAO();
         try {
             return restaurantDAO.findAll();
+        } catch (Exception ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return new ArrayList<>();
+    }
+    
+    public void creerLivreur(Livreur livreur) {
+        JpaUtil.ouvrirTransaction();
+        
+        LivreurDAO livreurDAO = new LivreurDAO();
+        livreurDAO.creerLivreur(livreur);
+        
+        JpaUtil.validerTransaction();
+    }
+    
+    /**
+     * TODO: vérifier le return
+     * @return 
+     */
+    public List<Livreur> recupererLivreur() {
+        LivreurDAO livreurDAO = new LivreurDAO();
+        try {
+            return livreurDAO.findAll();
         } catch (Exception ex) {
             Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
         }

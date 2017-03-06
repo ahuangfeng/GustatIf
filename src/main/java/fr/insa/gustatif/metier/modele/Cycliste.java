@@ -5,6 +5,7 @@
  */
 package fr.insa.gustatif.metier.modele;
 
+import java.io.Serializable;
 import javax.persistence.Entity;
 
 /**
@@ -12,19 +13,58 @@ import javax.persistence.Entity;
  * @author alexhuang05
  */
 @Entity
-public class Cycliste extends Livreur{
+public class Cycliste extends Livreur implements Serializable{
+    
+    private String nom;
+    private String prenom;
+    private String mail;
 
-    public Cycliste() {
+    protected Cycliste(){
+    }
+    
+    public Cycliste(String nom, String prenom, String mail) {
+        this.nom = nom;
+        this.prenom = prenom;
+        this.mail = mail;
     }
 
-    public Cycliste(String nom, String prenom, String mail, Integer capaciteMax, Boolean disponible) {
-        super(nom, prenom, mail, capaciteMax, disponible);
+    public Cycliste(String nom, String prenom, String mail, Integer capaciteMax, Boolean disponible, Double longitude, Double latitude) {
+        super(capaciteMax, disponible, longitude, latitude);
+        this.nom = nom;
+        this.prenom = prenom;
+        this.mail = mail;
+    }
+    
+    public String getNom() {
+        return nom;
+    }
+
+    public String getPrenom() {
+        return prenom;
+    }
+
+    public String getMail() {
+        return mail;
+    }
+    
+    
+    public void setNom(String nom) {
+        this.nom = nom;
+    }
+
+    public void setPrenom(String prenom) {
+        this.prenom = prenom;
+    }
+
+    public void setMail(String mail) {
+        this.mail = mail;
     }
 
     @Override
     public String toString() {
-        return "Cycliste{" + super.getString() + '}';
+        return "Cycliste{" + super.getString()+ "nom=" + nom + ", prenom=" + prenom + ", mail=" + mail + '}';
     }
-
     
+    
+
 }

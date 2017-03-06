@@ -3,6 +3,9 @@ package fr.insa.gustatif.vue;
 import fr.insa.gustatif.dao.ClientDAO;
 import fr.insa.gustatif.dao.JpaUtil;
 import fr.insa.gustatif.metier.modele.Client;
+import fr.insa.gustatif.metier.modele.Cycliste;
+import fr.insa.gustatif.metier.modele.Drone;
+import fr.insa.gustatif.metier.modele.Livreur;
 import fr.insa.gustatif.metier.modele.Produit;
 import fr.insa.gustatif.metier.modele.Restaurant;
 import fr.insa.gustatif.metier.service.ServiceMetier;
@@ -41,6 +44,15 @@ public class Main {
         //sm.creerRestaurant(new Restaurant("Nom","Description","adresse"));
         for (Restaurant res : sm.recupererRestaurant()) {
             System.out.println(res);
+        }
+        
+        //Tests Livreurs
+        //sm.creerLivreur(new Livreur(20,true,12.23455,12.14545));
+        //Livreur l = new Drone("MAT123",20,30,true,12.325,14.2115);
+        sm.creerLivreur(new Drone("MAT123",20,30,true,12.325,14.2115));
+        sm.creerLivreur(new Cycliste("CicloName","Prenom","mail@maiil.com", 30, true,1.230,5.256666));
+        for (Livreur result : sm.recupererLivreur()) {
+            System.out.println(result);
         }
         
         JpaUtil.fermerEntityManager();
