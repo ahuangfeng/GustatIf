@@ -8,6 +8,7 @@
     <class>fr.insa.gustatif.metier.modele.Cycliste</class>
     <class>fr.insa.gustatif.metier.modele.Drone</class>
     <class>fr.insa.gustatif.metier.modele.Livreur</class>
+    <class>fr.insa.gustatif.metier.modele.Commande</class>
     <properties>
       <property name="javax.persistence.jdbc.url" value="jdbc:derby://localhost:1527/gustatif_db"/>
       <property name="javax.persistence.jdbc.user" value="root"/>

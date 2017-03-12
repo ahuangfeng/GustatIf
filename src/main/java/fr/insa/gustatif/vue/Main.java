@@ -6,9 +6,12 @@ import fr.insa.gustatif.metier.modele.Client;
 import fr.insa.gustatif.metier.modele.Cycliste;
 import fr.insa.gustatif.metier.modele.Drone;
 import fr.insa.gustatif.metier.modele.Livreur;
+import fr.insa.gustatif.metier.modele.Commande;
 import fr.insa.gustatif.metier.modele.Produit;
 import fr.insa.gustatif.metier.modele.Restaurant;
 import fr.insa.gustatif.metier.service.ServiceMetier;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,28 +24,40 @@ public class Main {
 
     public static void main(String[] args) {
         System.out.println("Hola los amigos !");
-        
+
         JpaUtil.init();
         JpaUtil.creerEntityManager();
-        
+
         // Tests
         ServiceMetier sm = new ServiceMetier();
-        
+
         // Tests Client
         //sm.creerClient(new Client("1", "2", "3", "4"));
-        for (Client result : sm.recupererClients()) {
+        /*for (Client result : sm.recupererClients()) {
             System.out.println(result);
-        }
-        
+        }*/
+
         // Tests Produits
         //sm.creerProduit(new Produit("Gros cookie", "Un gros gros gros cookie", 1.4, 2.1));
-        for (Produit result : sm.recupererProduits()) {
+        /*for (Produit result : sm.recupererProduits()) {
             System.out.println(result);
-        }
-        
+        }*/
+
         // Tests Restaurants
         //sm.creerRestaurant(new Restaurant("Nom","Description","adresse"));
-        for (Restaurant res : sm.recupererRestaurant()) {
+        /*for (Restaurant res : sm.recupererRestaurants()) {
+            System.out.println(res);
+        }*/
+
+        // Tests Commandes
+        List<Produit> produits = new ArrayList<>();
+        List<Produit> produitsDB = sm.recupererProduits();
+        produits.add(produitsDB.get((int) (Math.random()) % produitsDB.size()));
+        produits.add(produitsDB.get((int) (Math.random()) % produitsDB.size()));
+        produits.add(produitsDB.get((int) (Math.random()) % produitsDB.size()));
+        Commande commande = Commande.createFromProducts(produits);
+        sm.creerCommande(commande);
+        for (Commande res : sm.recupererCommandes()) {
             System.out.println(res);
         }
         
