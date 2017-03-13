@@ -80,6 +80,21 @@ public class ServiceMetier {
             return false;
         }
     }
+    
+    
+    public boolean modifierClient(Client client) {
+        ClientDAO cl = new ClientDAO();
+        
+        JpaUtil.ouvrirTransaction();
+        try {
+            cl.modifierClient(client);
+            JpaUtil.validerTransaction();
+            return true;
+        } catch (Exception e) {
+            JpaUtil.annulerTransaction();
+            return false;
+        }
+    }
 
     /**
      * TODO: vérifier le return
@@ -96,6 +111,16 @@ public class ServiceMetier {
         return new ArrayList<>();
     }
 
+    public Client recupererClientsById(long id) {
+        ClientDAO clientDAO = new ClientDAO();
+        try {
+            return clientDAO.findById(id);
+        } catch (Exception ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+    
     public void creerProduit(Produit produit) {
         JpaUtil.ouvrirTransaction();
 

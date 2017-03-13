@@ -89,6 +89,20 @@ public class Main {
             System.out.println(produit.toString());
         }
         
+        //modifier client
+        Client cl = sm.recupererClientsById(124);
+        System.out.println(cl.toString());
+//        cl.setNom("NUEVOOO NOOMM");
+//        System.out.println(cl.toString());
+//        cl.setAdresse("por ahi");
+//        cl.setMail("asdfsd@ffff.fr");
+//        sm.modifierClient(cl);
+//        Client cl1 = sm.recupererClientsById(124);
+//        System.out.println(cl.toString());
+        
+        
+        
+        
         JpaUtil.fermerEntityManager();
         JpaUtil.destroy();
     }
