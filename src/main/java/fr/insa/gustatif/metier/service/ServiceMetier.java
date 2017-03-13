@@ -84,6 +84,38 @@ public class ServiceMetier {
     /**
      * TODO: vérifier le return
      *
+     * @param idClient
+     * @return la liste de tous les clients
+     */
+    public Client recupererClient(Long idClient) {
+        ClientDAO clientDAO = new ClientDAO();
+        try {
+            return clientDAO.findById(idClient);
+        } catch (Exception ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+
+    /**
+     * TODO: vérifier le return
+     *
+     * @param mail
+     * @return la liste de tous les clients
+     */
+    public Client recupererClient(String mail) {
+        ClientDAO clientDAO = new ClientDAO();
+        try {
+            return clientDAO.findByEmail(mail);
+        } catch (Exception ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+
+    /**
+     * TODO: vérifier le return
+     *
      * @return la liste de tous les clients
      */
     public List<Client> recupererClients() {
@@ -96,6 +128,13 @@ public class ServiceMetier {
         return new ArrayList<>();
     }
 
+    public void ajouterAuPanier(Client client, Produit produit) {
+        JpaUtil.ouvrirTransaction();
+        ClientDAO clientDAO = new ClientDAO();
+        clientDAO.ajouterAuPanier(client, produit);
+        JpaUtil.validerTransaction();
+    }
+    
     public void creerProduit(Produit produit) {
         JpaUtil.ouvrirTransaction();
 
@@ -184,9 +223,9 @@ public class ServiceMetier {
 
             JpaUtil.validerTransaction();
             return true;
-        } catch (Exception e) {
+        } catch (Exception ex) {
             System.err.println("La création du cycliste a échoué !");
-            e.printStackTrace();
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
             JpaUtil.annulerTransaction();
             return false;
         }
