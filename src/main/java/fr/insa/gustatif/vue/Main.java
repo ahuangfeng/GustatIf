@@ -76,7 +76,19 @@ public class Main {
         for (Livreur result : sm.recupererLivreur()) {
             System.out.println(result);
         }
-
+        
+        
+        //Service GetProduit
+        //Produit prod = sm.getProduit(53);
+        //System.out.println(prod.toString());
+        
+        
+        //Liste de produit par id de restaurant
+        List<Produit> liste = sm.recupererProduitsFromRestaurant(1);
+        for (Produit produit : liste) {
+            System.out.println(produit.toString());
+        }
+        
         JpaUtil.fermerEntityManager();
         JpaUtil.destroy();
     }

@@ -104,7 +104,17 @@ public class ServiceMetier {
 
         JpaUtil.validerTransaction();
     }
-
+    
+    public Produit getProduit(long id){
+        ProduitDAO produitDAO = new ProduitDAO();
+        Produit res = null;
+        try {
+            return res = produitDAO.findById(id);
+        } catch (Exception ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return res;
+    }
     /**
      * TODO: vérifier le return
      *
@@ -118,6 +128,18 @@ public class ServiceMetier {
             Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
         }
         return new ArrayList<>();
+    }
+    
+    public List<Produit> recupererProduitsFromRestaurant(long id){
+        RestaurantDAO restaurantDao = new RestaurantDAO();
+        List<Produit> liste = null ;
+        try {
+            Restaurant restaurant = restaurantDao.findById(id);
+            liste = restaurant.getProduits();
+        } catch (Exception ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return liste;   //gerer erreurs 
     }
 
     public void creerRestaurant(Restaurant restaurant) {
