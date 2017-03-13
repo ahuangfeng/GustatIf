@@ -5,44 +5,41 @@
  */
 package fr.insa.gustatif.dao;
 
-import fr.insa.gustatif.metier.modele.Client;
-import fr.insa.gustatif.metier.modele.Cycliste;
 import fr.insa.gustatif.metier.modele.Drone;
-import fr.insa.gustatif.metier.modele.Livreur;
 import java.util.List;
 import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.NonUniqueResultException;
 import javax.persistence.Query;
 
 /**
  *
  */
-public class LivreurDAO {
+public class DroneDAO {
     
-    public Livreur findById(long id) throws Exception {
+    public void creerDrone(Drone drone){
         EntityManager em = JpaUtil.obtenirEntityManager();
-        Livreur livreur = null;
+        em.persist(drone);
+    }
+    
+    public Drone findById(long id) throws Exception {
+        EntityManager em = JpaUtil.obtenirEntityManager();
         try{
-            livreur = em.find(Livreur.class, id);
+            return em.find(Drone.class, id);
         }
         catch(Exception e) {
             throw e;
         }
-        return livreur;
     }
     
-    public List<Livreur> findAll() throws Exception {
+    public List<Drone> findAll() throws Exception {
         EntityManager em = JpaUtil.obtenirEntityManager();
-        List<Livreur> livreur = null;
+        List<Drone> drone = null;
         try {
-            Query q = em.createQuery("SELECT l FROM Livreur l");
-            livreur = (List<Livreur>) q.getResultList();
+            Query q = em.createQuery("SELECT d FROM Drone d");
+            drone = (List<Drone>) q.getResultList();
         }
         catch(Exception e) {
             throw e;
         }
-        return livreur;
+        return drone;
     }
-    
 }

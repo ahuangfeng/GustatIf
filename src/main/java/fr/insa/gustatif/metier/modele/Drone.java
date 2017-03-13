@@ -15,20 +15,13 @@ import javax.persistence.Entity;
 public class Drone extends Livreur implements Serializable {
 
     private Integer vitesse;
-    private String matricule;
 
     protected Drone() {
     }
 
-    public Drone(Integer vitesse, String matricule) {
-        this.vitesse = vitesse;
-        this.matricule = matricule;
-    }
-
-    public Drone(String matricule, Integer vitesse, Integer capaciteMax, Boolean disponible, Double longitude, Double latitude) {
+    public Drone(Integer vitesse, Integer capaciteMax, Boolean disponible, Double longitude, Double latitude) {
         super(capaciteMax, disponible, longitude, latitude);
         this.vitesse = vitesse;
-        this.matricule = matricule;
     }
 
     public Integer getVitesse() {
@@ -36,20 +29,16 @@ public class Drone extends Livreur implements Serializable {
     }
 
     public String getMatricule() {
-        return matricule;
+        return "MAT" + getId();
     }
 
     public void setVitesse(Integer vitesse) {
         this.vitesse = vitesse;
     }
 
-    public void setMatricule(String matricule) {
-        this.matricule = matricule;
-    }
-
     @Override
     public String toString() {
-        return "Drone{" + super.toString() + ", vitesse=" + vitesse + ", matricule=" + matricule + '}';
+        return "Drone{" + super.toString() + ", vitesse=" + vitesse + ", matricule=" + getMatricule() + '}';
     }
 
 }

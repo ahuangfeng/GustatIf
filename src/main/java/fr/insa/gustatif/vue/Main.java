@@ -8,8 +8,8 @@ import fr.insa.gustatif.metier.modele.Livreur;
 import fr.insa.gustatif.metier.modele.Commande;
 import fr.insa.gustatif.metier.modele.Produit;
 import fr.insa.gustatif.metier.modele.ProduitCommande;
-import fr.insa.gustatif.metier.modele.Restaurant;
 import fr.insa.gustatif.metier.service.ServiceMetier;
+import fr.insa.gustatif.metier.service.ServiceTechnique;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -20,8 +20,6 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println("Hola los amigos !");
-
         JpaUtil.init();
         JpaUtil.creerEntityManager();
 
@@ -29,7 +27,9 @@ public class Main {
         ServiceMetier sm = new ServiceMetier();
 
         // Tests Client
-        //sm.creerClient(new Client("1", "2", "3", "4"));
+        String nomClient = ServiceTechnique.GenererString();
+        String prenomClient = ServiceTechnique.GenererString();
+        sm.creerClient(new Client(nomClient, prenomClient, nomClient + "." + prenomClient + "@client.fr", "Villeurbanne"));
         /*for (Client result : sm.recupererClients()) {
             System.out.println(result);
         }*/
@@ -63,11 +63,13 @@ public class Main {
             System.out.println(res);
         }
 
-        //Tests Livreurs
-        //sm.creerLivreur(new Livreur(20,true,12.23455,12.14545));
-        //Livreur l = new Drone("MAT123",20,30,true,12.325,14.2115);
-        sm.creerLivreur(new Drone("MAT123", 20, 30, true, 12.325, 14.2115));
-        sm.creerLivreur(new Cycliste("CicloName", "Prenom", "mail@maiil.com", 30, true, 1.230, 5.256666));
+        // Tests Livreurs
+        sm.creerDrone(new Drone(20, 30, true, 12.325, 14.2115));
+        
+        String nom = ServiceTechnique.GenererString();
+        String prenom = ServiceTechnique.GenererString();
+        sm.creerCycliste(new Cycliste(nom, prenom, nom + "." + prenom + "@gustatif.com", 30, true, 1.230, 5.256666));
+        
         for (Livreur result : sm.recupererLivreur()) {
             System.out.println(result);
         }

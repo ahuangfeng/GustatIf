@@ -6,6 +6,7 @@
 package fr.insa.gustatif.metier.modele;
 
 import java.io.Serializable;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 
 @Entity
@@ -13,6 +14,7 @@ public class Cycliste extends Livreur implements Serializable {
 
     private String nom;
     private String prenom;
+    @Column(unique = true)
     private String mail;
 
     protected Cycliste() {

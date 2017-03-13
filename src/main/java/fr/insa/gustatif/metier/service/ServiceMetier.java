@@ -1,12 +1,16 @@
 package fr.insa.gustatif.metier.service;
 
 import com.google.maps.model.LatLng;
+import fr.insa.gustatif.dao.JpaUtil;
+import fr.insa.gustatif.dao.DroneDAO;
+import fr.insa.gustatif.dao.CyclisteDAO;
 import fr.insa.gustatif.dao.ClientDAO;
 import fr.insa.gustatif.dao.CommandeDAO;
-import fr.insa.gustatif.dao.JpaUtil;
 import fr.insa.gustatif.dao.LivreurDAO;
 import fr.insa.gustatif.dao.ProduitDAO;
 import fr.insa.gustatif.dao.RestaurantDAO;
+import fr.insa.gustatif.metier.modele.Drone;
+import fr.insa.gustatif.metier.modele.Cycliste;
 import fr.insa.gustatif.metier.modele.Client;
 import fr.insa.gustatif.metier.modele.Livreur;
 import fr.insa.gustatif.metier.modele.Commande;
@@ -23,6 +27,12 @@ import java.util.logging.Logger;
  */
 public class ServiceMetier {
 
+    ServiceTechnique serviceTechnique;
+
+    public ServiceMetier() {
+        this.serviceTechnique = new ServiceTechnique();
+    }
+
     /**
      * Crée un client en vérifiant que le mail est unique.
      *
@@ -30,18 +40,45 @@ public class ServiceMetier {
      * @return true si le client a été créé, sinon false (mail déjà utilisé)
      * @throws Exception
      */
-    public boolean creerClient(Client client) throws Exception {
+    public boolean creerClient(Client client) {
         JpaUtil.ouvrirTransaction();
 
         // TODO: A tester
         LatLng coords = GeoTest.getLatLng(client.getAdresse());
         client.setLatitudeLongitude(coords);
 
-        ClientDAO clientDAO = new ClientDAO();
-        clientDAO.creerClient(client);
-
-        JpaUtil.validerTransaction();
-        return true;
+        try {
+            ClientDAO clientDAO = new ClientDAO();
+            if (!clientDAO.creerClient(client)) {
+                // Le client n'a pas été créé
+                serviceTechnique.EnvoyerMail(client.getMail(),
+                        "Votre inscription chez Gustat'IF",
+                        "Bonjour " + client.getPrenom() + "," + "\n"
+                        + "Votre inscription au service Gustat'IF a malencontreusement échoué... "
+                        + "Merci de recommencer ultérieurement."
+                );
+                return false;
+            }
+            
+            // Le client a été créé
+            serviceTechnique.EnvoyerMail(client.getMail(),
+                    "Bienvenue chez Gustat'IF",
+                    "Bonjour " + client.getPrenom() + "," + "\n"
+                    + "Nous vous confirmons votre inscription au service Gustat'IF. "
+                    + "Votre numéro de client est : " + client.getId() + "."
+            );
+            JpaUtil.validerTransaction();
+            return true;
+        } catch (Exception e) {
+            serviceTechnique.EnvoyerMail(client.getMail(),
+                    "Votre inscription chez Gustat'IF",
+                    "Bonjour " + client.getPrenom() + "," + "\n"
+                    + "Votre inscription au service Gustat'IF a malencontreusement échoué... "
+                    + "Merci de recommencer ultérieusement."
+            );
+            JpaUtil.annulerTransaction();
+            return false;
+        }
     }
 
     /**
@@ -106,19 +143,37 @@ public class ServiceMetier {
         }
         return new ArrayList<>();
     }
-    
-    public void creerLivreur(Livreur livreur) {
+
+    public void creerDrone(Drone drone) {
         JpaUtil.ouvrirTransaction();
-        
-        LivreurDAO livreurDAO = new LivreurDAO();
-        livreurDAO.creerLivreur(livreur);
-        
+
+        DroneDAO droneDAO = new DroneDAO();
+        droneDAO.creerDrone(drone);
+
         JpaUtil.validerTransaction();
     }
-    
+
+    public boolean creerCycliste(Cycliste cycliste) {
+        JpaUtil.ouvrirTransaction();
+
+        try {
+            CyclisteDAO cyclisteDAO = new CyclisteDAO();
+            cyclisteDAO.creerCycliste(cycliste);
+
+            JpaUtil.validerTransaction();
+            return true;
+        } catch (Exception e) {
+            System.err.println("La création du cycliste a échoué !");
+            e.printStackTrace();
+            JpaUtil.annulerTransaction();
+            return false;
+        }
+    }
+
     /**
      * TODO: vérifier le return
-     * @return 
+     *
+     * @return
      */
     public List<Livreur> recupererLivreur() {
         LivreurDAO livreurDAO = new LivreurDAO();
@@ -129,7 +184,7 @@ public class ServiceMetier {
         }
         return new ArrayList<>();
     }
-    
+
     public void creerCommande(Commande commande) {
         JpaUtil.ouvrirTransaction();
 
