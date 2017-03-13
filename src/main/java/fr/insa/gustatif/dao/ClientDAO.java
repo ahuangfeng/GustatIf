@@ -4,6 +4,7 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import fr.insa.gustatif.metier.modele.Client;
+import fr.insa.gustatif.metier.modele.Produit;
 import javax.persistence.NoResultException;
 import javax.persistence.NonUniqueResultException;
 
@@ -11,8 +12,10 @@ public class ClientDAO {
 
     /**
      * Crée un client en vérifiant que le mail est unique.
+     *
      * @param client
-     * @return true si le client a été créé, sinon false (le mail est déjà utilisé)
+     * @return true si le client a été créé, sinon false (le mail est déjà
+     * utilisé)
      * @throws java.lang.Exception
      */
     public boolean creerClient(Client client) throws Exception {
@@ -48,12 +51,19 @@ public class ClientDAO {
         return client;
     }
 
+    public Client findByEmail(String mail) throws Exception {
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        Query emailQuery = em.createQuery("select c from Client c where c.mail = :mail");
+        emailQuery.setParameter("mail", mail);
+        return (Client) emailQuery.getSingleResult();
+    }
+
     public boolean existWithMail(String mail) throws Exception {
         EntityManager em = JpaUtil.obtenirEntityManager();
         Query emailQuery = em.createQuery("select c from Client c where c.mail = :mail");
         emailQuery.setParameter("mail", mail);
         try {
-            Client client = (Client) emailQuery.getSingleResult();
+            emailQuery.getSingleResult();
         } catch (NoResultException e) {
             return false;
         } catch (NonUniqueResultException e) {
@@ -72,5 +82,11 @@ public class ClientDAO {
             throw e;
         }
         return clients;
+    }
+
+    public void ajouterAuPanier(Client client, Produit produit) {
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        client.ajouterAuPanier(produit);
+        em.merge(client);
     }
 }

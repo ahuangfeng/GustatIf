@@ -32,6 +32,14 @@ public class Main {
         // Tests
         ServiceMetier sm = new ServiceMetier();
 
+        final List<Produit> produitsDB = sm.recupererProduits();
+        final List<Client> clients = sm.recupererClients();
+        
+        // Test Panier
+        Client clientPanier = clients.get((int) (Math.random() * clients.size()));
+        Produit produitPanier = produitsDB.get((int) (Math.random() * produitsDB.size()));
+        sm.ajouterAuPanier(clientPanier, produitPanier);
+
         // Tests Client
         String nomClient = ServiceTechnique.GenererString();
         String prenomClient = ServiceTechnique.GenererString();
@@ -39,6 +47,7 @@ public class Main {
         for (Client result : sm.recupererClients()) {
             System.out.println(result);
         }
+        
         // Tests Produits
         //sm.creerProduit(new Produit("Gros cookie", "Un gros gros gros cookie", 1.4, 2.1));
         for (Produit result : sm.recupererProduits()) {
@@ -51,7 +60,6 @@ public class Main {
         }
         
         // Tests Commandes
-        final List<Produit> produitsDB = sm.recupererProduits();
         List<ProduitCommande> produits = new ArrayList<>();
         while ((Math.random() > 0.2 || produits.size() <= 0) && produits.size() < 10) {
             int id = (int) (Math.random() * produitsDB.size());
@@ -59,7 +67,6 @@ public class Main {
             produits.add(new ProduitCommande(produitsDB.get(id), qu));
         }
         
-        List<Client> clients = sm.recupererClients();
         Client clientCommande = clients.get((int) (Math.random() * clients.size()));
         System.out.println("Commande par " + clientCommande.getMail() + " :");
         for (ProduitCommande produitCommande : produits) {
