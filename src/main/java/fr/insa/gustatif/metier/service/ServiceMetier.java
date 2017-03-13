@@ -33,7 +33,7 @@ public class ServiceMetier {
     public ServiceMetier() {
         this.serviceTechnique = new ServiceTechnique();
     }
-
+    
     /**
      * Crée un client en vérifiant que le mail est unique.
      *
@@ -271,6 +271,30 @@ public class ServiceMetier {
         }
         return new ArrayList<>();
     }
+    
+    public Livreur recupererLivreur(long id) {
+        LivreurDAO livreurDAO = new LivreurDAO();
+        try {
+            return livreurDAO.findById(id);
+        } catch (Exception ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+    
+    public boolean modifierLivreur(Livreur livreur) {
+        JpaUtil.ouvrirTransaction();
+        LivreurDAO livreurDAO = new LivreurDAO();
+        try {
+            livreurDAO.modifierLivreur(livreur);
+            JpaUtil.validerTransaction();
+            return true;
+        } catch (Exception ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+            JpaUtil.annulerTransaction();
+            return false;
+        }
+    }
 
     public void creerCommande(Commande commande) {
         JpaUtil.ouvrirTransaction();
@@ -312,8 +336,7 @@ public class ServiceMetier {
         }
     }
     
-    //TODO: Tests!
-    public boolean RetirerProduitDeCommande(long idCommande, long idProduit) {
+    public boolean retirerProduitDeCommande(long idCommande, long idProduit) {
         JpaUtil.ouvrirTransaction();
         boolean enleve = false;
         CommandeDAO commandeDAO = new CommandeDAO();

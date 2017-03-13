@@ -5,9 +5,6 @@
  */
 package fr.insa.gustatif.dao;
 
-import fr.insa.gustatif.metier.modele.Client;
-import fr.insa.gustatif.metier.modele.Cycliste;
-import fr.insa.gustatif.metier.modele.Drone;
 import fr.insa.gustatif.metier.modele.Livreur;
 import java.util.List;
 import javax.persistence.EntityManager;
@@ -30,6 +27,28 @@ public class LivreurDAO {
             throw e;
         }
         return livreur;
+    }
+    
+    public boolean exists(long id) throws Exception {
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        try {
+            em.find(Livreur.class, id);
+            return true;
+        } catch (NoResultException e) {
+            return false;
+        } catch (NonUniqueResultException e) {
+            return true;
+        }
+    }
+    
+    public boolean modifierLivreur(Livreur livreur) throws Exception{
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        
+        if (exists(livreur.getId())) {
+            em.merge(livreur);
+            return true;
+        }
+        return false;
     }
     
     public List<Livreur> findAll() throws Exception {
