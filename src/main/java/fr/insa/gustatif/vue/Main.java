@@ -8,6 +8,7 @@ import fr.insa.gustatif.metier.modele.Livreur;
 import fr.insa.gustatif.metier.modele.Commande;
 import fr.insa.gustatif.metier.modele.Produit;
 import fr.insa.gustatif.metier.modele.ProduitCommande;
+import fr.insa.gustatif.metier.modele.Restaurant;
 import fr.insa.gustatif.metier.service.ServiceMetier;
 import fr.insa.gustatif.metier.service.ServiceTechnique;
 import java.util.ArrayList;
@@ -30,19 +31,19 @@ public class Main {
         String nomClient = ServiceTechnique.GenererString();
         String prenomClient = ServiceTechnique.GenererString();
         sm.creerClient(new Client(nomClient, prenomClient, nomClient + "." + prenomClient + "@client.fr", "Villeurbanne"));
-        /*for (Client result : sm.recupererClients()) {
+        for (Client result : sm.recupererClients()) {
             System.out.println(result);
-        }*/
+        }
         // Tests Produits
         //sm.creerProduit(new Produit("Gros cookie", "Un gros gros gros cookie", 1.4, 2.1));
-        /*for (Produit result : sm.recupererProduits()) {
+        for (Produit result : sm.recupererProduits()) {
             System.out.println(result);
-        }*/
+        }
         // Tests Restaurants
         //sm.creerRestaurant(new Restaurant("Nom","Description","adresse"));
-        /*for (Restaurant res : sm.recupererRestaurants()) {
+        for (Restaurant res : sm.recupererRestaurants()) {
             System.out.println(res);
-        }*/
+        }
         
         // Tests Commandes
         final List<Produit> produitsDB = sm.recupererProduits();
@@ -53,11 +54,13 @@ public class Main {
             produits.add(new ProduitCommande(produitsDB.get(id), qu));
         }
         
-        System.out.println("Commande :");
+        List<Client> clients = sm.recupererClients();
+        Client clientCommande = clients.get((int) (Math.random() * clients.size()));
+        System.out.println("Commande par " + clientCommande.getMail() + " :");
         for (ProduitCommande produitCommande : produits) {
             System.out.println(produitCommande);
         }
-        Commande commande = new Commande(new Date(), null, produits);
+        Commande commande = new Commande(clientCommande, new Date(), null, produits);
         sm.creerCommande(commande);
         for (Commande res : sm.recupererCommandes()) {
             System.out.println(res);

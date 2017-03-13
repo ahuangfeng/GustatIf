@@ -9,6 +9,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Temporal;
 
 @Entity
@@ -17,6 +18,8 @@ public class Commande implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
+    @OneToOne
+    private Client client;
     @Temporal(javax.persistence.TemporalType.DATE)
     private Date dateDeCommande;
     @Temporal(javax.persistence.TemporalType.DATE)
@@ -30,14 +33,8 @@ public class Commande implements Serializable {
         this.produitsCommande = new ArrayList<>();
     }
 
-    public Commande(Date heureDeCommande, Date heureDeFin, Double prix) {
-        this.dateDeCommande = heureDeCommande;
-        this.dateDeFin = heureDeFin;
-        this.prix = prix;
-        this.produitsCommande = new ArrayList<>();
-    }
-
-    public Commande(Date heureDeCommande, Date heureDeFin, List<ProduitCommande> produits) {
+    public Commande(Client client, Date heureDeCommande, Date heureDeFin, List<ProduitCommande> produits) {
+        this.client = client;
         this.dateDeCommande = heureDeCommande;
         this.dateDeFin = heureDeFin;
         this.produitsCommande = produits;
@@ -49,6 +46,10 @@ public class Commande implements Serializable {
 
     public Long getId() {
         return id;
+    }
+
+    public Client getClient() {
+        return client;
     }
 
     public Date getDateDeCommande() {
@@ -67,6 +68,10 @@ public class Commande implements Serializable {
         return produitsCommande;
     }
 
+    public void setClient(Client client) {
+        this.client = client;
+    }
+    
     public void setDateDeCommande(Date dateDeCommande) {
         this.dateDeCommande = dateDeCommande;
     }
@@ -90,7 +95,7 @@ public class Commande implements Serializable {
 
     @Override
     public String toString() {
-        String r = "Commande #" + id + ", "+ prix + " €, effectuée à " + dateDeCommande + " et terminée à " + dateDeFin + " :";
+        String r = "Commande #" + id + " de " + client.getMail() + ", " + prix + " €, effectuée à " + dateDeCommande + " et terminée à " + dateDeFin + " :";
         for (ProduitCommande produitCommande : produitsCommande) {
             r += "\n";
             r += produitCommande;

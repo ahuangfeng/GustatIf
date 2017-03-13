@@ -197,6 +197,22 @@ public class ServiceMetier {
     /**
      * TODO: vérifier le return
      *
+     * @param idCommande
+     * @return
+     */
+    public Commande recupererCommande(Long idCommande) {
+        CommandeDAO commandeDAO = new CommandeDAO();
+        try {
+            return commandeDAO.findById(idCommande);
+        } catch (Exception ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
+        }
+    }
+
+    /**
+     * TODO: vérifier le return
+     *
      * @return
      */
     public List<Commande> recupererCommandes() {
@@ -208,5 +224,4 @@ public class ServiceMetier {
         }
         return new ArrayList<>();
     }
-
 }

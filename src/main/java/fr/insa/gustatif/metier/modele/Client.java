@@ -1,11 +1,15 @@
 package fr.insa.gustatif.metier.modele;
 
 import com.google.maps.model.LatLng;
+import com.sun.javafx.scene.control.skin.VirtualFlow;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
 
 @Entity
 public class Client implements Serializable {
@@ -16,8 +20,11 @@ public class Client implements Serializable {
     private String prenom;
     private String mail;
     private String adresse;
-    private Double longitude;
     private Double latitude;
+    private Double longitude;
+    
+    @OneToMany
+    List<Commande> commandes;
 
     protected Client() {
     }
@@ -29,6 +36,7 @@ public class Client implements Serializable {
         this.adresse = adresse;
         this.longitude = null;
         this.latitude = null;
+        this.commandes = new ArrayList<>();
     }
 
     public Long getId() {
@@ -59,6 +67,10 @@ public class Client implements Serializable {
         return latitude;
     }
 
+    public List<Commande> getCommandes() {
+        return commandes;
+    }
+    
     public void setNom(String nom) {
         this.nom = nom;
     }
@@ -80,6 +92,10 @@ public class Client implements Serializable {
         this.longitude = coords.lng;
     }
 
+    public void addCommande(Commande commande) {
+        this.commandes.add(commande);
+    }
+    
     @Override
     public String toString() {
         return "Client{" + "id=" + id + ", nom=" + nom + ", prenom=" + prenom + ", mail=" + mail + ", adresse=" + adresse + ", longitude=" + longitude + ", latitude=" + latitude + '}';
