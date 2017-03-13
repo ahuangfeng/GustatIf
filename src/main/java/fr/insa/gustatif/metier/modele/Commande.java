@@ -92,6 +92,10 @@ public class Commande implements Serializable {
         // Persistance en cascade
         this.produitsCommande.add(new ProduitCommande(produit, quantity));
     }
+    
+    public void setProduits(List<ProduitCommande> com) {
+        this.produitsCommande = com;
+    }
 
     @Override
     public String toString() {
