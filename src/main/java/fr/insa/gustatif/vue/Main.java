@@ -1,6 +1,5 @@
 package fr.insa.gustatif.vue;
 
-import fr.insa.gustatif.dao.ClientDAO;
 import fr.insa.gustatif.dao.JpaUtil;
 import fr.insa.gustatif.metier.modele.Client;
 import fr.insa.gustatif.metier.modele.Cycliste;
@@ -8,14 +7,12 @@ import fr.insa.gustatif.metier.modele.Drone;
 import fr.insa.gustatif.metier.modele.Livreur;
 import fr.insa.gustatif.metier.modele.Commande;
 import fr.insa.gustatif.metier.modele.Produit;
+import fr.insa.gustatif.metier.modele.ProduitCommande;
 import fr.insa.gustatif.metier.modele.Restaurant;
 import fr.insa.gustatif.metier.service.ServiceMetier;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.persistence.EntityManager;
 
 /**
  *
@@ -36,40 +33,45 @@ public class Main {
         /*for (Client result : sm.recupererClients()) {
             System.out.println(result);
         }*/
-
         // Tests Produits
         //sm.creerProduit(new Produit("Gros cookie", "Un gros gros gros cookie", 1.4, 2.1));
         /*for (Produit result : sm.recupererProduits()) {
             System.out.println(result);
         }*/
-
         // Tests Restaurants
         //sm.creerRestaurant(new Restaurant("Nom","Description","adresse"));
         /*for (Restaurant res : sm.recupererRestaurants()) {
             System.out.println(res);
         }*/
-
+        
         // Tests Commandes
-        List<Produit> produits = new ArrayList<>();
-        List<Produit> produitsDB = sm.recupererProduits();
-        produits.add(produitsDB.get((int) (Math.random()) % produitsDB.size()));
-        produits.add(produitsDB.get((int) (Math.random()) % produitsDB.size()));
-        produits.add(produitsDB.get((int) (Math.random()) % produitsDB.size()));
-        Commande commande = Commande.createFromProducts(produits);
+        final List<Produit> produitsDB = sm.recupererProduits();
+        List<ProduitCommande> produits = new ArrayList<>();
+        while ((Math.random() > 0.2 || produits.size() <= 0) && produits.size() < 10) {
+            int id = (int) (Math.random() * produitsDB.size());
+            int qu = (int) (Math.random() * 10) + 1;
+            produits.add(new ProduitCommande(produitsDB.get(id), qu));
+        }
+        
+        System.out.println("Commande :");
+        for (ProduitCommande produitCommande : produits) {
+            System.out.println(produitCommande);
+        }
+        Commande commande = new Commande(new Date(), null, produits);
         sm.creerCommande(commande);
         for (Commande res : sm.recupererCommandes()) {
             System.out.println(res);
         }
-        
+
         //Tests Livreurs
         //sm.creerLivreur(new Livreur(20,true,12.23455,12.14545));
         //Livreur l = new Drone("MAT123",20,30,true,12.325,14.2115);
-        sm.creerLivreur(new Drone("MAT123",20,30,true,12.325,14.2115));
-        sm.creerLivreur(new Cycliste("CicloName","Prenom","mail@maiil.com", 30, true,1.230,5.256666));
+        sm.creerLivreur(new Drone("MAT123", 20, 30, true, 12.325, 14.2115));
+        sm.creerLivreur(new Cycliste("CicloName", "Prenom", "mail@maiil.com", 30, true, 1.230, 5.256666));
         for (Livreur result : sm.recupererLivreur()) {
             System.out.println(result);
         }
-        
+
         JpaUtil.fermerEntityManager();
         JpaUtil.destroy();
     }

@@ -9,15 +9,15 @@ import java.io.Serializable;
 import javax.persistence.Entity;
 
 /**
- * 
+ *
  */
 @Entity
-public class Drone extends Livreur implements Serializable{
-    
+public class Drone extends Livreur implements Serializable {
+
     private Integer vitesse;
     private String matricule;
-    
-    protected Drone(){
+
+    protected Drone() {
     }
 
     public Drone(Integer vitesse, String matricule) {
@@ -49,10 +49,7 @@ public class Drone extends Livreur implements Serializable{
 
     @Override
     public String toString() {
-        return "Drone{" + super.getString() +"vitesse=" + vitesse + ", matricule=" + matricule + '}';
+        return "Drone{" + super.toString() + ", vitesse=" + vitesse + ", matricule=" + matricule + '}';
     }
-    
-    
 
-    
 }

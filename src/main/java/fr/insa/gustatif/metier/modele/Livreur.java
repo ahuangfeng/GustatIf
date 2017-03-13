@@ -12,8 +12,9 @@ import javax.persistence.InheritanceType;
  *
  */
 @Entity
-@Inheritance (strategy = InheritanceType.JOINED)
-public class Livreur implements Serializable{
+@Inheritance(strategy = InheritanceType.JOINED)
+public class Livreur implements Serializable {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -21,11 +22,11 @@ public class Livreur implements Serializable{
     private Boolean disponible;
     private Double longitude;
     private Double latitude;
-    
-    protected Livreur(){
+
+    protected Livreur() {
     }
 
-    public Livreur( Integer capaciteMax, Boolean disponible, Double longitude, Double latitude) {
+    public Livreur(Integer capaciteMax, Boolean disponible, Double longitude, Double latitude) {
         this.capaciteMax = capaciteMax;
         this.disponible = disponible;
         this.longitude = longitude;
@@ -76,15 +77,10 @@ public class Livreur implements Serializable{
         this.latitude = latitude;
         this.longitude = longitude;
     }
-    
-    public String getString(){
-        return "id=" + id + ", capaciteMax=" + capaciteMax + ", disponible=" + disponible + ", longitude=" + longitude + ", latitude=" + latitude;
-    }
 
     @Override
     public String toString() {
         return "Livreur{" + "id=" + id + ", capaciteMax=" + capaciteMax + ", disponible=" + disponible + ", longitude=" + longitude + ", latitude=" + latitude + '}';
     }
-    
-    
+
 }

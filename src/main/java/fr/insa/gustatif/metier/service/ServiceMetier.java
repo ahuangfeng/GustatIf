@@ -38,9 +38,7 @@ public class ServiceMetier {
         client.setLatitudeLongitude(coords);
 
         ClientDAO clientDAO = new ClientDAO();
-        if (!clientDAO.creerClient(client)) {
-            return false;
-        }
+        clientDAO.creerClient(client);
 
         JpaUtil.validerTransaction();
         return true;
@@ -131,7 +129,7 @@ public class ServiceMetier {
         }
         return new ArrayList<>();
     }
-
+    
     public void creerCommande(Commande commande) {
         JpaUtil.ouvrirTransaction();
 

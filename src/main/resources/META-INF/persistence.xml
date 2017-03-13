@@ -5,10 +5,11 @@
     <class>fr.insa.gustatif.metier.modele.Client</class>
     <class>fr.insa.gustatif.metier.modele.Produit</class>
     <class>fr.insa.gustatif.metier.modele.Restaurant</class>
+    <class>fr.insa.gustatif.metier.modele.Commande</class>
     <class>fr.insa.gustatif.metier.modele.Cycliste</class>
     <class>fr.insa.gustatif.metier.modele.Drone</class>
     <class>fr.insa.gustatif.metier.modele.Livreur</class>
-    <class>fr.insa.gustatif.metier.modele.Commande</class>
+    <class>fr.insa.gustatif.metier.modele.ProduitCommande</class>
     <properties>
       <property name="javax.persistence.jdbc.url" value="jdbc:derby://localhost:1527/gustatif_db"/>
       <property name="javax.persistence.jdbc.user" value="root"/>

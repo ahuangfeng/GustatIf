@@ -1,5 +1,6 @@
 package fr.insa.gustatif.metier.modele;
 
+import com.google.maps.model.LatLng;
 import java.io.Serializable;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -74,9 +75,9 @@ public class Client implements Serializable {
         this.adresse = adresse;
     }
 
-    public void setLatitudeLongitude(Double latitude, Double longitude) {
-        this.latitude = latitude;
-        this.longitude = longitude;
+    public void setLatitudeLongitude(LatLng coords) {
+        this.latitude = coords.lat;
+        this.longitude = coords.lng;
     }
 
     @Override

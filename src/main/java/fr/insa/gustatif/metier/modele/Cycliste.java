@@ -8,20 +8,16 @@ package fr.insa.gustatif.metier.modele;
 import java.io.Serializable;
 import javax.persistence.Entity;
 
-/**
- *
- * @author alexhuang05
- */
 @Entity
-public class Cycliste extends Livreur implements Serializable{
-    
+public class Cycliste extends Livreur implements Serializable {
+
     private String nom;
     private String prenom;
     private String mail;
 
-    protected Cycliste(){
+    protected Cycliste() {
     }
-    
+
     public Cycliste(String nom, String prenom, String mail) {
         this.nom = nom;
         this.prenom = prenom;
@@ -34,7 +30,7 @@ public class Cycliste extends Livreur implements Serializable{
         this.prenom = prenom;
         this.mail = mail;
     }
-    
+
     public String getNom() {
         return nom;
     }
@@ -46,8 +42,7 @@ public class Cycliste extends Livreur implements Serializable{
     public String getMail() {
         return mail;
     }
-    
-    
+
     public void setNom(String nom) {
         this.nom = nom;
     }
@@ -62,9 +57,7 @@ public class Cycliste extends Livreur implements Serializable{
 
     @Override
     public String toString() {
-        return "Cycliste{" + super.getString()+ "nom=" + nom + ", prenom=" + prenom + ", mail=" + mail + '}';
+        return "Cycliste{" + super.toString() + ", nom=" + nom + ", prenom=" + prenom + ", mail=" + mail + '}';
     }
-    
-    
 
 }
