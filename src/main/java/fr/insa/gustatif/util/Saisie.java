@@ -3,12 +3,14 @@ package fr.insa.gustatif.util;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 /**
  *
  * @author DASI Team
+ * @author B3233
  */
 public class Saisie {
 
@@ -52,6 +54,18 @@ public class Saisie {
             }
         }
         return valeurLue;
+    }
+    
+    public static Integer choixMenu(String invite, String[] choix) {
+        String generatedInvite = invite;
+        ArrayList<Integer> vals = new ArrayList<>();
+        for (int i = 0; i < choix.length; ++i) {
+            generatedInvite += "\n";
+            generatedInvite += "  " + (i + 1) + ". " + choix[i];
+            vals.add(i + 1);
+        }
+        generatedInvite += "\n";
+        return lireInteger(generatedInvite, vals);
     }
     
     public static void pause() {

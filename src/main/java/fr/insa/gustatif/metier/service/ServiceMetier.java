@@ -9,6 +9,8 @@ import fr.insa.gustatif.dao.CommandeDAO;
 import fr.insa.gustatif.dao.LivreurDAO;
 import fr.insa.gustatif.dao.ProduitDAO;
 import fr.insa.gustatif.dao.RestaurantDAO;
+import fr.insa.gustatif.exceptions.DuplicateEmailException;
+import fr.insa.gustatif.exceptions.IllegalUserInfoException;
 import fr.insa.gustatif.metier.modele.Drone;
 import fr.insa.gustatif.metier.modele.Cycliste;
 import fr.insa.gustatif.metier.modele.Client;
@@ -21,9 +23,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.persistence.RollbackException;
 
 /**
- *
+ * TODO: Annuler une commande
  */
 public class ServiceMetier {
 
@@ -38,9 +41,8 @@ public class ServiceMetier {
      *
      * @param client Le client à enregistrer dans la BDD
      * @return true si le client a été créé, sinon false (mail déjà utilisé)
-     * @throws Exception
      */
-    public boolean creerClient(Client client) {
+    public boolean creerClient(Client client) throws DuplicateEmailException, IllegalUserInfoException {
         JpaUtil.ouvrirTransaction();
 
         // TODO: A tester
@@ -49,27 +51,22 @@ public class ServiceMetier {
 
         try {
             ClientDAO clientDAO = new ClientDAO();
-            if (!clientDAO.creerClient(client)) {
-                // Le client n'a pas été créé
+            try {
+                clientDAO.creerClient(client);
+                
+                // Le client a été créé
                 serviceTechnique.EnvoyerMail(client.getMail(),
-                        "Votre inscription chez Gustat'IF",
+                        "Bienvenue chez Gustat'IF",
                         "Bonjour " + client.getPrenom() + "," + "\n"
-                        + "Votre inscription au service Gustat'IF a malencontreusement échoué... "
-                        + "Merci de recommencer ultérieurement."
+                        + "Nous vous confirmons votre inscription au service Gustat'IF. "
+                        + "Votre numéro de client est : " + client.getId() + "."
                 );
-                return false;
+                JpaUtil.validerTransaction();
+                return true;
+            } catch (DuplicateEmailException | IllegalUserInfoException e) {
+                throw e;
             }
-            
-            // Le client a été créé
-            serviceTechnique.EnvoyerMail(client.getMail(),
-                    "Bienvenue chez Gustat'IF",
-                    "Bonjour " + client.getPrenom() + "," + "\n"
-                    + "Nous vous confirmons votre inscription au service Gustat'IF. "
-                    + "Votre numéro de client est : " + client.getId() + "."
-            );
-            JpaUtil.validerTransaction();
-            return true;
-        } catch (Exception e) {
+        } catch (RollbackException e) {
             serviceTechnique.EnvoyerMail(client.getMail(),
                     "Votre inscription chez Gustat'IF",
                     "Bonjour " + client.getPrenom() + "," + "\n"
@@ -111,6 +108,32 @@ public class ServiceMetier {
             Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;
+    }
+
+    /**
+     * null pour ne pas modifier
+     * @param client
+     * @param nom
+     * @param prenom
+     * @param email
+     * @param adresse
+     * @return 
+     */
+    public boolean modifierClient(Client client, String nom, String prenom, String email, String adresse) {
+        JpaUtil.ouvrirTransaction();
+        ClientDAO clientDAO = new ClientDAO();
+        try {
+            if (clientDAO.modifierClient(client, nom, prenom, email, adresse)) {
+                JpaUtil.annulerTransaction();
+                return false;
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+            JpaUtil.annulerTransaction();
+            return false;
+        }
+        JpaUtil.validerTransaction();
+        return true;
     }
 
     /**
@@ -169,11 +192,11 @@ public class ServiceMetier {
         return new ArrayList<>();
     }
     
-    public List<Produit> recupererProduitsFromRestaurant(long id){
+    public List<Produit> recupererProduitsFromRestaurant(Long idRestaurant){
         RestaurantDAO restaurantDao = new RestaurantDAO();
         List<Produit> liste = null ;
         try {
-            Restaurant restaurant = restaurantDao.findById(id);
+            Restaurant restaurant = restaurantDao.findById(idRestaurant);
             liste = restaurant.getProduits();
         } catch (Exception ex) {
             Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
@@ -193,6 +216,22 @@ public class ServiceMetier {
     /**
      * TODO: vérifier le return
      *
+     * @param idRestaurant
+     * @return
+     */
+    public Restaurant recupererRestaurant(Long idRestaurant) {
+        RestaurantDAO restaurantDAO = new RestaurantDAO();
+        try {
+            return restaurantDAO.findById(idRestaurant);
+        } catch (Exception ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+
+    /**
+     * TODO: vérifier le return
+     *
      * @return
      */
     public List<Restaurant> recupererRestaurants() {
@@ -203,6 +242,22 @@ public class ServiceMetier {
             Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
         }
         return new ArrayList<>();
+    }
+
+    /**
+     * TODO: vérifier le return
+     *
+     * @return
+     * @throws java.lang.Exception
+     */
+    public List<Restaurant> recupererRestaurantsTriesAlpha() throws Exception {
+        RestaurantDAO restaurantDAO = new RestaurantDAO();
+        try {
+            return restaurantDAO.findAllSortedByName();
+        } catch (Exception ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+            throw ex;
+        }
     }
 
     public void creerDrone(Drone drone) {
@@ -284,5 +339,15 @@ public class ServiceMetier {
             Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
         }
         return new ArrayList<>();
+    }
+
+    public Produit recupererProduit(long idProduit) {
+        ProduitDAO produitDAO = new ProduitDAO();
+        try {
+            return produitDAO.findById(idProduit);
+        } catch (Exception ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
     }
 }

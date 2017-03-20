@@ -24,6 +24,7 @@ public class CommandeDAO {
     }
 
     public List<Commande> findAll() throws Exception {
+        // TODO: OMG à quoi sert le catch ici ??
         EntityManager em = JpaUtil.obtenirEntityManager();
         List<Commande> commandes = null;
         try {

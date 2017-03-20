@@ -91,7 +91,7 @@ public class Main {
         
         
         //Liste de produit par id de restaurant
-        List<Produit> liste = sm.recupererProduitsFromRestaurant(1);
+        List<Produit> liste = sm.recupererProduitsFromRestaurant(1L);
         for (Produit produit : liste) {
             System.out.println(produit.toString());
         }

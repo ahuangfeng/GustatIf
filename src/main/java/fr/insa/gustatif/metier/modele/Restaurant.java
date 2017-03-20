@@ -89,5 +89,4 @@ public class Restaurant implements Serializable {
     public String toString() {
         return "Restaurant{" + "id=" + id + ", denomination=" + denomination + ", description=" + description + ", adresse=" + adresse + ", longitude=" + longitude + ", latitude=" + latitude + ", produits=" + produits + '}';
     }
-
 }
