@@ -34,9 +34,6 @@ public class Commande implements Serializable {
     @ManyToOne
     private Livreur livreur;
 
-    private EtatPaiement etatpaiement;
-    private EtatLivraison etatLivaison;
-
     protected Commande() {
         this.produitsCommande = new ArrayList<>();
     }
@@ -50,8 +47,6 @@ public class Commande implements Serializable {
         for (ProduitCommande produitCommande : this.produitsCommande) {
             this.prix += produitCommande.getProduit().getPrix() * produitCommande.getQuantity();
         }
-        this.etatLivaison = EtatLivraison.EN_ATTENTE;
-        this.etatpaiement = EtatPaiement.NONPAYE;
         this.idRestaurant = null;
         //TODO Mettre a jour le id Restaurant
     }
@@ -100,22 +95,6 @@ public class Commande implements Serializable {
         this.livreur = livreur;
     }
     
-    public EtatPaiement getEtatpaiement() {
-        return etatpaiement;
-    }
-
-    public void setEtatpaiement(EtatPaiement etatpaiement) {
-        this.etatpaiement = etatpaiement;
-    }
-
-    public EtatLivraison getEtatLivaison() {
-        return etatLivaison;
-    }
-
-    public void setEtatLivaison(EtatLivraison etatLivaison) {
-        this.etatLivaison = etatLivaison;
-    }
-    
     /**
      * Le prix est calculé automatiquement, cette méthode est donc protégée.
      * @param prix 
@@ -149,7 +128,6 @@ public class Commande implements Serializable {
             r += "\n";
             r += produitCommande;
         }
-        r += "\n Livraison="+this.etatLivaison+", Paiement="+this.etatpaiement;
         return r;
     }
 }

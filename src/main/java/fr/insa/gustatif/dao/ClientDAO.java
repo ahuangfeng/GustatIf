@@ -44,14 +44,37 @@ public class ClientDAO {
         em.persist(client);
     }
 
-    public boolean modifierClient(Client client) throws PersistenceException {
+    /**
+     *
+     * @param client
+     * @param nom
+     * @param prenom
+     * @param email
+     * @param adresse
+     * @throws DuplicateEmailException
+     */
+    public void modifierClient(Client client, String nom, String prenom, String email, String adresse) throws DuplicateEmailException, PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
 
-        if (existWithMail(client.getMail())) {
-            em.merge(client);
-            return true;
+        // Vérifie l'unicité de l'email du client
+        if (existWithMail(email)) {
+            throw new DuplicateEmailException(email);
         }
-        return false;
+
+        if (null != nom && !nom.isEmpty()) {
+            client.setNom(nom);
+        }
+        if (null != prenom && !prenom.isEmpty()) {
+            client.setPrenom(prenom);
+        }
+        if (null != email && !email.isEmpty()) {
+            client.setMail(email);
+        }
+        if (null != adresse && !adresse.isEmpty()) {
+            client.setAdresse(adresse);
+        }
+
+        em.merge(client);
     }
 
     public Client findById(long id) {
@@ -59,7 +82,7 @@ public class ClientDAO {
         return em.find(Client.class, id);
     }
 
-    public Client findByEmail(String mail) throws NonUniqueResultException, PersistenceException {
+    public Client findByEmail(String mail) throws PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
         Query emailQuery = em.createQuery("select c from Client c where c.mail = :mail");
         emailQuery.setParameter("mail", mail);
@@ -94,51 +117,6 @@ public class ClientDAO {
             throw e;
         }
         return clients;
-    }
-
-    public void ajouterAuPanier(Client client, Produit produit, int quantite) {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        client.ajouterAuPanier(new ProduitCommande(produit, quantite));
-        em.merge(client);
-    }
-
-    /**
-     *
-     * @param client
-     * @param nom
-     * @param prenom
-     * @param email
-     * @param adresse
-     * @throws DuplicateEmailException
-     */
-    public void modifierClient(Client client, String nom, String prenom, String email, String adresse) throws DuplicateEmailException, PersistenceException {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-
-        // Vérifie l'unicité de l'email du client et la validité des informations
-        if (existWithMail(email)) {
-            throw new DuplicateEmailException(email);
-        }
-
-        if (!nom.isEmpty()) {
-            client.setNom(nom);
-        }
-        if (!prenom.isEmpty()) {
-            client.setPrenom(prenom);
-        }
-        if (!email.isEmpty()) {
-            client.setMail(email);
-        }
-        if (!adresse.isEmpty()) {
-            client.setAdresse(adresse);
-        }
-
-        em.merge(client);
-    }
-
-    public void viderPanier(Client client) {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        client.viderPanier();
-        em.merge(client);
     }
     
     public void ajouterCommande(Client client, Commande commande) {

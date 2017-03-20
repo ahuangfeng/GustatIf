@@ -5,8 +5,6 @@ import fr.insa.gustatif.exceptions.DuplicateEmailException;
 import fr.insa.gustatif.exceptions.IllegalUserInfoException;
 import fr.insa.gustatif.metier.modele.Client;
 import fr.insa.gustatif.metier.modele.Commande;
-import fr.insa.gustatif.metier.modele.EtatLivraison;
-import fr.insa.gustatif.metier.modele.EtatPaiement;
 import fr.insa.gustatif.metier.modele.Produit;
 import fr.insa.gustatif.metier.modele.ProduitCommande;
 import fr.insa.gustatif.metier.modele.Restaurant;
@@ -38,13 +36,12 @@ public class SimulationPublic {
 
     private void accueil() {
         int choix = -1;
-        while (choix != 6) {
+        while (choix != 5) {
             System.out.println("Accueil de Gustat'IF.");
             afficherIdentite();
             choix = Saisie.choixMenu("Que voulez-vous faire ?", new String[]{
                 "Gestion compte / Connexion / Inscription",
                 "Voir toutes mes commandes",
-                "Voir commandes en cours",
                 "Restaurants",
                 "Contact",
                 "Quitter"
@@ -62,19 +59,11 @@ public class SimulationPublic {
                     }
                     break;
                 }
-                case 3:{
-                    if(identite != null){
-                        voirCommandesEnCours();
-                    }else{
-                        System.out.println("Pas connecté!");
-                    }
-                    break;
-                }
-                case 4: { // Restaurants
+                case 3: { // Restaurants
                     restaurants();
                     break;
                 }
-                case 5: { // Contact
+                case 4: { // Contact
                     break;
                 }
             }
@@ -88,7 +77,8 @@ public class SimulationPublic {
             System.out.println("Liste des restaurants :");
             List<Restaurant> restaurants;
             try {
-                restaurants = serviceMetier.recupererRestaurantsTriesAlpha();
+                restaurants = serviceMetier.recupererRestaurants();
+                restaurants.sort((Restaurant r1, Restaurant r2) -> r1.getDenomination().compareToIgnoreCase(r2.getDenomination()));
                 for (Restaurant restaurant : restaurants) {
                     System.out.println("  - " + restaurant);
                 }
@@ -185,7 +175,7 @@ public class SimulationPublic {
 
         boolean cree;
         try {
-            cree = serviceMetier.creerClient(new Client(nom, prenom, email, adresse));
+            cree = serviceMetier.inscrireClient(new Client(nom, prenom, email, adresse));
         } catch (DuplicateEmailException ex) {
             cree = false;
             System.out.println("Ce mail est déjà utilisé !");
@@ -237,12 +227,12 @@ public class SimulationPublic {
                         String email = null;
                         while (true) {
                             email = Saisie.lireChaine("Adresse mail : ");
-                            if (serviceMetier.recupererClient(email) == null) {
+                            if (null == serviceMetier.recupererClient(email)) {
                                 break;
                             } else {
                                 if (Saisie.choixMenu("Ce mail est déjà utilisé, que voulez-vous faire ?", new String[]{
                                     "Entrer un autre mail",
-                                    "Annuler l'inscription"
+                                    "Annuler la modification"
                                 }) == 2) { // Annuler l'inscription
                                     return;
                                 }
@@ -254,6 +244,10 @@ public class SimulationPublic {
                             serviceMetier.modifierClient(identite, nom, prenom, email, adresse);
                         } catch (DuplicateEmailException ex) {
                             System.out.println("Votre compte n'a pas pu être mis à jour, car cet email est déjà utilisé.");
+                            afficherIdentite();
+                            break;
+                        } catch (BadLocationException ex) {
+                            System.out.println("Votre compte n'a pas pu être mis à jour, car votre adresse n'est pas reconnue.");
                             afficherIdentite();
                             break;
                         }
@@ -333,17 +327,13 @@ public class SimulationPublic {
                 "Payer en espèces",
                 "Retour"
             });
-            switch (choix) {
+            switch (choix) { //TODO les deux payer sont pareil!
                 case 1: { // Payer avec carte
-                    serviceMetier.payer(commandeActuel); //TODO faire qq chose.
                     System.out.println("Commande "+commandeActuel.getId()+" payé avec carte bancaire.");
-                    System.out.println("Etat de la livraison : "+commandeActuel.getEtatLivaison() );
                     break;
                 }
                 case 2 : { //Payer en especes
-                    serviceMetier.payerCommandeALaLivraison(commandeActuel);
                     System.out.println("Commande "+commandeActuel.getId()+" avec paiement à la livraison.");
-                    System.out.println("Etat de la livraison : "+commandeActuel.getEtatLivaison() );
                     break;
                 }
             }
@@ -358,14 +348,6 @@ public class SimulationPublic {
         if(listeCommandes!=null){
             for (Commande listeCommande : listeCommandes) {
                 System.out.println(listeCommande.toString());
-            }
-        }
-    }
-    void voirCommandesEnCours(){
-        List<Commande> liste = identite.getCommandes();
-        for (Commande commande : liste) {
-            if(commande.getEtatLivaison()!=EtatLivraison.LIVRE || commande.getEtatpaiement()!=EtatPaiement.PAYE){
-                System.out.println(commande.toString());
             }
         }
     }

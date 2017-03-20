@@ -4,12 +4,14 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import fr.insa.gustatif.metier.modele.Commande;
-import fr.insa.gustatif.metier.modele.EtatLivraison;
-import fr.insa.gustatif.metier.modele.EtatPaiement;
+import fr.insa.gustatif.metier.modele.Drone;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.NoResultException;
 import javax.persistence.NonUniqueResultException;
+import javax.persistence.PersistenceException;
 
 public class CommandeDAO {
 
@@ -28,7 +30,7 @@ public class CommandeDAO {
         }
         return commande;
     }
-    
+
     public boolean exists(long id) throws Exception {
         EntityManager em = JpaUtil.obtenirEntityManager();
         try {
@@ -40,12 +42,12 @@ public class CommandeDAO {
             return true;
         }
     }
-    
-    public boolean modifierCommande(long id, Commande commande){ // TODO commande ne sers a rien
+
+    public boolean modifierCommande(long id, Commande commande) { // TODO commande ne sers a rien
         EntityManager em = JpaUtil.obtenirEntityManager();
         try {
             Commande cm = findById(id);
-            if(exists(id)){
+            if (exists(id)) {
                 em.merge(cm);
             }
             return true;
@@ -55,61 +57,36 @@ public class CommandeDAO {
         }
     }
 
-    public List<Commande> findAll() throws Exception {
+    public List<Commande> findAll() throws PersistenceException {
         // TODO: OMG à quoi sert le catch ici ??
         EntityManager em = JpaUtil.obtenirEntityManager();
         List<Commande> commandes = null;
         try {
             Query q = em.createQuery("SELECT c FROM Commande c");
             commandes = (List<Commande>) q.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             throw e;
         }
         return commandes;
     }
-    
-    public boolean payer(long id){
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        Commande commande = null;
-        try{
-            commande = em.find(Commande.class, id);
-            commande.setEtatpaiement(EtatPaiement.PAYE);
-            return true;
-        }catch (Exception e){
-            throw e;
-        }
-    }
-    
-    public boolean payerALaLivraison(long id){
-        boolean res = false;
-        
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        Commande commande = null;
-        try{
-            commande = em.find(Commande.class, id);
-            commande.setEtatpaiement(EtatPaiement.PAYER_A_LA_LIVRAISON);
-            res = true;
-        }catch (Exception e){
-            throw e;
-        }
-        return res;
-    }
 
-    public void livraisonComplete(Commande commande) {
+    public List<Commande> recupererCommandesEnCoursParDrones() {
+        // TODO: A factoriser une fois les tests passés
         EntityManager em = JpaUtil.obtenirEntityManager();
-        commande.setEtatLivaison(EtatLivraison.LIVRE);
-        em.merge(commande);
-    }
-
-    public void livraisonEnCours(Commande commande) {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        commande.setEtatLivaison(EtatLivraison.EN_COURS);
-        em.merge(commande);
+        Query q = em.createQuery("SELECT c FROM Commande c WHERE c.dateDeFin is null");
+        List<Commande> lc = q.getResultList();
+        for (Iterator<Commande> it = lc.iterator(); it.hasNext();) {
+            Commande commande = it.next();
+            if (commande.getLivreur() instanceof Drone) {
+                it.remove();
+            }
+        }
+        return lc;
     }
     
-    public void livraisonEnAttente(Commande commande) {
+    public void validerCommande(Commande commande) {
         EntityManager em = JpaUtil.obtenirEntityManager();
-        commande.setEtatLivaison(EtatLivraison.EN_ATTENTE);
+        commande.setDateDeFin(new Date());
         em.merge(commande);
     }
     

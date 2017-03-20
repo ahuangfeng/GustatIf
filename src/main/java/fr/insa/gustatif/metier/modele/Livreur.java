@@ -1,12 +1,15 @@
 package fr.insa.gustatif.metier.modele;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
+import javax.persistence.OneToMany;
 
 /**
  *
@@ -20,17 +23,22 @@ public class Livreur implements Serializable {
     private Long id;
     private Integer capaciteMax;
     private Boolean disponible;
-    private Double longitude;
     private Double latitude;
+    private Double longitude;
+    private Commande commandeEnCours;
+    @OneToMany(cascade = javax.persistence.CascadeType.ALL)
+    private List<Commande> commandesLivrees;
 
     protected Livreur() {
+        this.commandesLivrees = new ArrayList<>();
     }
 
-    public Livreur(Integer capaciteMax, Boolean disponible, Double longitude, Double latitude) {
+    public Livreur(Integer capaciteMax, Boolean disponible, Double latitude, Double longitude) {
         this.capaciteMax = capaciteMax;
         this.disponible = disponible;
-        this.longitude = longitude;
         this.latitude = latitude;
+        this.longitude = longitude;
+        this.commandesLivrees = new ArrayList<>();
     }
 
     public Long getId() {
@@ -51,6 +59,14 @@ public class Livreur implements Serializable {
 
     public Double getLatitude() {
         return latitude;
+    }
+
+    public Commande getCommandeEnCours() {
+        return commandeEnCours;
+    }
+
+    public List<Commande> getCommandesLivrees() {
+        return commandesLivrees;
     }
 
     public void setId(Long id) {
@@ -78,9 +94,22 @@ public class Livreur implements Serializable {
         this.longitude = longitude;
     }
 
+    public void setCommandeEnCours(Commande commandeEnCours) {
+        this.commandeEnCours = commandeEnCours;
+    }
+
+    public void ajouterCommandesLivree(Commande commandeLivree) {
+        this.commandesLivrees.add(commandeLivree);
+    }
+
+    public void terminerCommandeEnCours() {
+        this.commandesLivrees.add(commandeEnCours);
+        this.commandeEnCours = null;
+    }
+
     @Override
     public String toString() {
-        return "Livreur{" + "id=" + id + ", capaciteMax=" + capaciteMax + ", disponible=" + disponible + ", longitude=" + longitude + ", latitude=" + latitude + '}';
+        return "Livreur{" + "id=" + id + ", capaciteMax=" + capaciteMax + ", disponible=" + disponible + ", latitude=" + latitude + ", longitude=" + longitude + '}';
     }
 
 }

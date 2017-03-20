@@ -32,11 +32,14 @@ public class ServiceTechnique {
         ps.println("-----------------------------------------------------------------------");
     }
 
-    public static String GenererString() {
-        int longueur = 4 + (int) (Math.random() * 8);
+    public static String GenererString(boolean capitalized) {
+        int longueur = 3 + (int) (Math.random() * 2);
         String r = "";
         for (int i = 0; i < longueur; i++) {
-            r += (char) ((char) (Math.random() * 26) + 'A');
+            r += (char) ((char) (Math.random() * 26) + 'a');
+        }
+        if (capitalized) {
+            return Character.toUpperCase(r.charAt(0)) + r.substring(1);
         }
         return r;
     }
