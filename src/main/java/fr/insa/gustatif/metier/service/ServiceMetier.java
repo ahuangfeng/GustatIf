@@ -3,9 +3,10 @@ package fr.insa.gustatif.metier.service;
 import com.google.maps.model.LatLng;
 import fr.insa.gustatif.dao.JpaUtil;
 import fr.insa.gustatif.dao.DroneDAO;
-import fr.insa.gustatif.dao.CyclisteDAO;
 import fr.insa.gustatif.dao.ClientDAO;
 import fr.insa.gustatif.dao.CommandeDAO;
+import fr.insa.gustatif.dao.CyclisteDAO;
+import fr.insa.gustatif.dao.GestionnaireDAO;
 import fr.insa.gustatif.dao.LivreurDAO;
 import fr.insa.gustatif.dao.ProduitDAO;
 import fr.insa.gustatif.dao.RestaurantDAO;
@@ -17,19 +18,17 @@ import fr.insa.gustatif.metier.modele.Cycliste;
 import fr.insa.gustatif.metier.modele.Client;
 import fr.insa.gustatif.metier.modele.Livreur;
 import fr.insa.gustatif.metier.modele.Commande;
+import fr.insa.gustatif.metier.modele.Gestionnaire;
 import fr.insa.gustatif.metier.modele.Produit;
 import fr.insa.gustatif.metier.modele.ProduitCommande;
 import fr.insa.gustatif.metier.modele.Restaurant;
-import fr.insa.gustatif.util.GeoTest;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.persistence.NoResultException;
 import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceException;
-import javax.persistence.RollbackException;
 
 /**
  * TODO: Annuler une commande
@@ -51,7 +50,7 @@ public class ServiceMetier {
      * @throws fr.insa.gustatif.exceptions.IllegalUserInfoException
      * @throws fr.insa.gustatif.exceptions.BadLocationException
      */
-    public boolean creerClient(Client client) throws DuplicateEmailException, IllegalUserInfoException, BadLocationException {
+    public boolean inscrireClient(Client client) throws DuplicateEmailException, IllegalUserInfoException, BadLocationException {
         final Runnable envoyerMailSucces = () -> {
             serviceTechnique.EnvoyerMail(client.getMail(),
                     "Bienvenue chez Gustat'IF",
@@ -82,6 +81,7 @@ public class ServiceMetier {
             // Récupère les coordonnées
             LatLng coords = ServiceTechnique.getLatLng(client.getAdresse());
             client.setLatitudeLongitude(coords);
+            // TODO: Le top serait de permettre des clients avec des adresses foireuses
 
             // Le client a été créé
             envoyerMailSucces.run();
@@ -101,7 +101,23 @@ public class ServiceMetier {
         }
     }
 
-    public boolean modifierClient(Client client) throws BadLocationException {
+    /**
+     *
+     * TODO: Tester ce qu'il se passe au niveau du client si la modif est
+     * refusée
+     *
+     * @param client
+     * @param nom
+     * @param prenom
+     * @param adresse
+     * @param email
+     * @return
+     * @throws BadLocationException
+     * @throws fr.insa.gustatif.exceptions.DuplicateEmailException
+     * @throws fr.insa.gustatif.exceptions.IllegalUserInfoException
+     */
+    public boolean modifierClient(Client client, String nom, String prenom, String email, String adresse)
+            throws DuplicateEmailException, BadLocationException {
         // Récupère les coordonnées
         LatLng coords = ServiceTechnique.getLatLng(client.getAdresse());
 
@@ -110,12 +126,15 @@ public class ServiceMetier {
         JpaUtil.ouvrirTransaction();
         try {
             client.setLatitudeLongitude(coords);
-            clientDAO.modifierClient(client);
+            clientDAO.modifierClient(client, nom, prenom, email, adresse);
             JpaUtil.validerTransaction();
             return true;
         } catch (PersistenceException e) {
             JpaUtil.annulerTransaction();
             return false;
+        } catch (DuplicateEmailException ex) {
+            JpaUtil.annulerTransaction();
+            throw ex;
         }
     }
 
@@ -140,34 +159,10 @@ public class ServiceMetier {
         ClientDAO clientDAO = new ClientDAO();
         try {
             return clientDAO.findByEmail(mail);
-        } catch (NonUniqueResultException ex) {
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
         } catch (PersistenceException ex) {
             Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;
-    }
-
-    /**
-     * vide pour ne pas modifier
-     *
-     * @param client
-     * @param nom
-     * @param prenom
-     * @param email
-     * @param adresse
-     * @throws fr.insa.gustatif.exceptions.DuplicateEmailException
-     */
-    public void modifierClient(Client client, String nom, String prenom, String email, String adresse) throws DuplicateEmailException {
-        JpaUtil.ouvrirTransaction();
-        ClientDAO clientDAO = new ClientDAO();
-        try {
-            clientDAO.modifierClient(client, nom, prenom, email, adresse);
-        } catch (DuplicateEmailException ex) {
-            JpaUtil.annulerTransaction();
-            throw ex;
-        }
-        JpaUtil.validerTransaction();
     }
 
     /**
@@ -194,23 +189,16 @@ public class ServiceMetier {
         }
         return null;
     }
-    
-    public void ajouterAuPanier(Client client, Produit produit, int quantite) {
-        JpaUtil.ouvrirTransaction();
-        ClientDAO clientDAO = new ClientDAO();
-        clientDAO.ajouterAuPanier(client, produit, quantite);
-        JpaUtil.validerTransaction();
-    }
 
-    public void creerProduit(Produit produit) {
-        JpaUtil.ouvrirTransaction();
-
-        ProduitDAO produitDAO = new ProduitDAO();
-        produitDAO.creerProduit(produit);
-
-        JpaUtil.validerTransaction();
-    }
-
+    /**
+     * public void ajouterAuPanier(Client client, Produit produit, int quantite)
+     *
+     * TODO: Géré par l'IHM !! NOUS, Seulement commande
+     *
+     * @param client
+     * @param produit
+     * @param quantite
+     */
     public Produit getProduit(long id) {
         ProduitDAO produitDAO = new ProduitDAO();
         Produit res = null;
@@ -237,6 +225,12 @@ public class ServiceMetier {
         return new ArrayList<>();
     }
 
+    /**
+     * TODO: Inutile car attribut de restaurant
+     *
+     * @param idRestaurant
+     * @return
+     */
     public List<Produit> recupererProduitsFromRestaurant(Long idRestaurant) {
         RestaurantDAO restaurantDao = new RestaurantDAO();
         List<Produit> liste = null;
@@ -246,16 +240,7 @@ public class ServiceMetier {
         } catch (Exception ex) {
             Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return liste;   //gerer erreurs 
-    }
-
-    public void creerRestaurant(Restaurant restaurant) {
-        JpaUtil.ouvrirTransaction();
-
-        RestaurantDAO restaurantDAO = new RestaurantDAO();
-        restaurantDAO.creerRestaurant(restaurant);
-
-        JpaUtil.validerTransaction();
+        return liste; // TODO: gerer erreurs
     }
 
     /**
@@ -290,47 +275,8 @@ public class ServiceMetier {
     }
 
     /**
-     * TODO: vérifier le return
-     *
-     * @return
-     * @throws java.lang.Exception
+     * @TODO: Tous ces creer => hop dans la créationDemo
      */
-    public List<Restaurant> recupererRestaurantsTriesAlpha() throws Exception {
-        RestaurantDAO restaurantDAO = new RestaurantDAO();
-        try {
-            return restaurantDAO.findAllSortedByName();
-        } catch (Exception ex) {
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
-            throw ex;
-        }
-    }
-
-    public void creerDrone(Drone drone) {
-        JpaUtil.ouvrirTransaction();
-
-        DroneDAO droneDAO = new DroneDAO();
-        droneDAO.creerDrone(drone);
-
-        JpaUtil.validerTransaction();
-    }
-
-    public boolean creerCycliste(Cycliste cycliste) {
-        JpaUtil.ouvrirTransaction();
-
-        try {
-            CyclisteDAO cyclisteDAO = new CyclisteDAO();
-            cyclisteDAO.creerCycliste(cycliste);
-
-            JpaUtil.validerTransaction();
-            return true;
-        } catch (Exception ex) {
-            System.err.println("La création du cycliste a échoué !");
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
-            JpaUtil.annulerTransaction();
-            return false;
-        }
-    }
-
     /**
      * TODO: vérifier le return
      *
@@ -375,13 +321,13 @@ public class ServiceMetier {
 
         CommandeDAO commandeDAO = new CommandeDAO();
         ClientDAO clientDAO = new ClientDAO();
-        commandeDAO.creerCommande(new Commande(client, new Date() , null, client.getPanier()));
-        clientDAO.viderPanier(client);
+        commandeDAO.creerCommande(new Commande(client, new Date(), null, client.getPanier()));
+        //clientDAO.viderPanier(client);
         JpaUtil.validerTransaction();
     }
 
     /**
-     * TODO: vérifier le return
+     * TODO: A VOIR SI UTILE TODO: vérifier le return
      *
      * @param idCommande
      * @return
@@ -393,49 +339,6 @@ public class ServiceMetier {
         } catch (Exception ex) {
             Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
             return null;
-        }
-    }
-
-    public boolean modifierCommande(long id, Commande commande) {
-        JpaUtil.ouvrirTransaction();
-        CommandeDAO commandeDAO = new CommandeDAO();
-        try {
-            commandeDAO.modifierCommande(id, commande);
-            JpaUtil.validerTransaction();
-            return true;
-        } catch (Exception ex) {
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
-            JpaUtil.annulerTransaction();
-            return false;
-        }
-    }
-
-    public boolean retirerProduitDeCommande(long idCommande, long idProduit) {
-        JpaUtil.ouvrirTransaction();
-        boolean enleve = false;
-        CommandeDAO commandeDAO = new CommandeDAO();
-        try {
-            Commande com = commandeDAO.findById(idCommande);
-            List<ProduitCommande> produitsCommande = com.getProduits();
-            for (ProduitCommande prod : produitsCommande) {
-                if (prod.getProduit().getId() == idProduit) {
-                    produitsCommande.remove(prod);
-                    enleve = true;
-                }
-            }
-            com.setProduits(produitsCommande);
-
-            commandeDAO.modifierCommande(idCommande, com);
-            if (enleve) {
-                JpaUtil.validerTransaction();
-            } else {
-                throw new Exception("ID du produit n'est pas trouvé dans la commande. ");
-            }
-            return true;
-        } catch (Exception ex) {
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
-            JpaUtil.annulerTransaction();
-            return false;
         }
     }
 
@@ -454,6 +357,11 @@ public class ServiceMetier {
         return new ArrayList<>();
     }
 
+    public List<Commande> recupererCommandesEnCoursParDrones() {
+        CommandeDAO commandeDAO = new CommandeDAO();
+        return commandeDAO.recupererCommandesEnCoursParDrones();
+    }
+
     public Produit recupererProduit(long idProduit) {
         ProduitDAO produitDAO = new ProduitDAO();
         try {
@@ -463,51 +371,103 @@ public class ServiceMetier {
         }
         return null;
     }
-    
-    public boolean payerCommandeALaLivraison(Commande commande){ 
-        JpaUtil.ouvrirTransaction();
 
-        try {
-            CommandeDAO commandeDAO = new CommandeDAO();
-            commandeDAO.payerALaLivraison(commande.getId());
-            JpaUtil.validerTransaction();
-            return true;
-        } catch (Exception ex) {
-            System.err.println("Le paiement à la livraison a échoué !");
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
-            JpaUtil.annulerTransaction();
-            return false;
-        }
-    }
-    
-    public boolean payer(Commande commande){
-        JpaUtil.ouvrirTransaction();
-
-        try {
-            CommandeDAO commandeDAO = new CommandeDAO();
-            commandeDAO.payer(commande.getId());
-            JpaUtil.validerTransaction();
-            return true;
-        } catch (Exception ex) {
-            System.err.println("Le paiement sur le site web a échoué !");
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
-            JpaUtil.annulerTransaction();
-            return false;
-        }
-    }
-    
-    public void commandeLivree(Commande commande){
+    /**
+     * TODO: NE PAS FAIRE, SEUL PAIEMENT A LA COMMANDE TODO: PAS CETTE GESTION
+     * PRECISE DE L'ETAT: soit en cours de livraison, soit livrée
+     */
+    /**
+     * @param commande
+     */
+    public void validerCommande(Commande commande) {
         JpaUtil.ouvrirTransaction();
         CommandeDAO commandeDAO = new CommandeDAO();
-        commandeDAO.livraisonComplete(commande);
+        commandeDAO.validerCommande(commande);
+        LivreurDAO livreurDAO = new LivreurDAO();
+        livreurDAO.terminerCommandeEnCours(commande.getLivreur());
         JpaUtil.validerTransaction();
     }
-    
-    public void livraisonEnCours(Commande commande){
+
+    public Cycliste recupererCycliste(String email) {
+        CyclisteDAO cyclisteDAO = new CyclisteDAO();
+        try {
+            return cyclisteDAO.findByEmail(email);
+        } catch (PersistenceException ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+
+    public Gestionnaire recupererGestionnaire(String email) {
+        GestionnaireDAO gestionnaireDAO = new GestionnaireDAO();
+        try {
+            return gestionnaireDAO.findByEmail(email);
+        } catch (PersistenceException ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+
+    public void genererComptesFictifs() throws PersistenceException {
         JpaUtil.ouvrirTransaction();
-        CommandeDAO commandeDAO = new CommandeDAO();
-        commandeDAO.livraisonEnCours(commande);
+
+        final int NB_CYCLISTES = 15;
+        final int NB_DRONES = 10;
+        final int NB_GESTIONNAIRES = 3;
+
+        // Récupère les coordonnées du départ IF
+        LatLng coordsIF;
+        try {
+            coordsIF = ServiceTechnique.getLatLng("Département Informatique, INSA Lyon, Villeurbanne");
+        } catch (BadLocationException ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+            coordsIF = new LatLng(45.78126, 4.87221);
+        }
+
+        // Création des cyclistes
+        System.out.println("Création des cyclistes :");
+        CyclisteDAO cyclisteDAO = new CyclisteDAO();
+        for (int i = 0; i < NB_CYCLISTES; ++i) {
+            String nom = ServiceTechnique.GenererString(true);
+            String prenom = ServiceTechnique.GenererString(true);
+            Integer capaciteMax = 20 + (int) (Math.random() * 20);
+            Cycliste c = new Cycliste(nom, prenom, nom.toLowerCase() + "@gustatif.fr", capaciteMax, true, coordsIF.lat, coordsIF.lng);
+            cyclisteDAO.creerCycliste(c);
+            System.out.println("  - " + c);
+        }
+
+        // Création des drônes
+        System.out.println("Création des drônes :");
+        DroneDAO droneDAO = new DroneDAO();
+        for (int i = 0; i < NB_DRONES; ++i) {
+            Integer vitesse = 20 + (int) (Math.random() * 20);
+            Integer capaciteMax = 20 + (int) (Math.random() * 20);
+            Drone d = new Drone(vitesse, capaciteMax, true, coordsIF.lat, coordsIF.lng);
+            droneDAO.creerDrone(d);
+            System.out.println("  - " + d);
+        }
+
+        // Création des gestionnaires
+        System.out.println("Création des gestionnaires :");
+        GestionnaireDAO gestionnaireDAO = new GestionnaireDAO();
+        for (int i = 0; i < NB_GESTIONNAIRES; ++i) {
+            String nom = ServiceTechnique.GenererString(true);
+            String prenom = ServiceTechnique.GenererString(true);
+            Gestionnaire g = new Gestionnaire(nom, prenom, nom.toLowerCase() + "@gustatif.fr");
+            gestionnaireDAO.creerGestionnaire(g);
+            System.out.println("  - " + g);
+        }
+
         JpaUtil.validerTransaction();
     }
-    
+
+    public List<Livreur> recupererLivreurs() {
+        LivreurDAO livreurDAO = new LivreurDAO();
+        try {
+            return livreurDAO.findAll();
+        } catch (PersistenceException ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return new ArrayList<>();
+    }
 }

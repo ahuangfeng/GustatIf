@@ -8,6 +8,7 @@ import fr.insa.gustatif.metier.modele.Produit;
 import fr.insa.gustatif.metier.modele.Restaurant;
 import fr.insa.gustatif.metier.service.ServiceMetier;
 import fr.insa.gustatif.util.Saisie;
+import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,7 +64,8 @@ public class SimulationPublic {
             System.out.println("Liste des restaurants :");
             List<Restaurant> restaurants;
             try {
-                restaurants = serviceMetier.recupererRestaurantsTriesAlpha();
+                restaurants = serviceMetier.recupererRestaurants();
+                restaurants.sort((Restaurant r1, Restaurant r2) -> r1.getDenomination().compareToIgnoreCase(r2.getDenomination()));
                 for (Restaurant restaurant : restaurants) {
                     System.out.println("  - " + restaurant);
                 }
@@ -147,7 +149,7 @@ public class SimulationPublic {
 
         boolean cree;
         try {
-            cree = serviceMetier.creerClient(new Client(nom, prenom, email, adresse));
+            cree = serviceMetier.inscrireClient(new Client(nom, prenom, email, adresse));
         } catch (DuplicateEmailException ex) {
             cree = false;
             System.out.println("Ce mail est déjà utilisé !");
@@ -199,12 +201,12 @@ public class SimulationPublic {
                         String email = null;
                         while (true) {
                             email = Saisie.lireChaine("Adresse mail : ");
-                            if (serviceMetier.recupererClient(email) == null) {
+                            if (null == serviceMetier.recupererClient(email)) {
                                 break;
                             } else {
                                 if (Saisie.choixMenu("Ce mail est déjà utilisé, que voulez-vous faire ?", new String[]{
                                     "Entrer un autre mail",
-                                    "Annuler l'inscription"
+                                    "Annuler la modification"
                                 }) == 2) { // Annuler l'inscription
                                     return;
                                 }
@@ -216,6 +218,10 @@ public class SimulationPublic {
                             serviceMetier.modifierClient(identite, nom, prenom, email, adresse);
                         } catch (DuplicateEmailException ex) {
                             System.out.println("Votre compte n'a pas pu être mis à jour, car cet email est déjà utilisé.");
+                            afficherIdentite();
+                            break;
+                        } catch (BadLocationException ex) {
+                            System.out.println("Votre compte n'a pas pu être mis à jour, car votre adresse n'est pas reconnue.");
                             afficherIdentite();
                             break;
                         }

@@ -33,9 +33,6 @@ public class Commande implements Serializable {
     @ManyToOne
     private Livreur livreur;
 
-    private EtatPaiement etatpaiement;
-    private EtatLivraison etatLivaison;
-
     protected Commande() {
         this.produitsCommande = new ArrayList<>();
     }
@@ -49,8 +46,6 @@ public class Commande implements Serializable {
         for (ProduitCommande produitCommande : this.produitsCommande) {
             this.prix += produitCommande.getProduit().getPrix() * produitCommande.getQuantity();
         }
-        this.etatLivaison = EtatLivraison.EN_ATTENTE;
-        this.etatpaiement = EtatPaiement.NONPAYE;
     }
 
     public Long getId() {
@@ -95,22 +90,6 @@ public class Commande implements Serializable {
 
     public void setLivreur(Livreur livreur) {
         this.livreur = livreur;
-    }
-    
-    public EtatPaiement getEtatpaiement() {
-        return etatpaiement;
-    }
-
-    public void setEtatpaiement(EtatPaiement etatpaiement) {
-        this.etatpaiement = etatpaiement;
-    }
-
-    public EtatLivraison getEtatLivaison() {
-        return etatLivaison;
-    }
-
-    public void setEtatLivaison(EtatLivraison etatLivaison) {
-        this.etatLivaison = etatLivaison;
     }
     
     /**

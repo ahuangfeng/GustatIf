@@ -10,6 +10,7 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.NonUniqueResultException;
+import javax.persistence.PersistenceException;
 import javax.persistence.Query;
 
 /**
@@ -17,19 +18,19 @@ import javax.persistence.Query;
  */
 public class LivreurDAO {
     
-    public Livreur findById(long id) throws Exception {
+    public Livreur findById(long id) throws PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
         Livreur livreur = null;
         try{
             livreur = em.find(Livreur.class, id);
         }
-        catch(Exception e) {
+        catch(PersistenceException e) {
             throw e;
         }
         return livreur;
     }
     
-    public boolean exists(long id) throws Exception {
+    public boolean exists(long id) throws PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
         try {
             em.find(Livreur.class, id);
@@ -41,7 +42,7 @@ public class LivreurDAO {
         }
     }
     
-    public boolean modifierLivreur(Livreur livreur) throws Exception{
+    public boolean modifierLivreur(Livreur livreur) throws PersistenceException{
         EntityManager em = JpaUtil.obtenirEntityManager();
         
         if (exists(livreur.getId())) {
@@ -51,17 +52,24 @@ public class LivreurDAO {
         return false;
     }
     
-    public List<Livreur> findAll() throws Exception {
+    public List<Livreur> findAll() throws PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
         List<Livreur> livreur = null;
         try {
             Query q = em.createQuery("SELECT l FROM Livreur l");
             livreur = (List<Livreur>) q.getResultList();
         }
-        catch(Exception e) {
+        catch(PersistenceException e) {
             throw e;
         }
         return livreur;
     }
     
+    public void terminerCommandeEnCours(Livreur livreur) {
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        livreur.terminerCommandeEnCours();
+        em.merge(livreur);
+        
+        // TODO: Mettre le livreur dans un état "terminé"
+    }
 }

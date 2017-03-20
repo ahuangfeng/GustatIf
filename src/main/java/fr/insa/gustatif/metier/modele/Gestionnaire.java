@@ -1,27 +1,29 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package fr.insa.gustatif.metier.modele;
 
 import java.io.Serializable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 
+/**
+ *
+ */
 @Entity
-public class Cycliste extends Livreur implements Serializable {
-
+public class Gestionnaire implements Serializable {
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
     private String nom;
     private String prenom;
     @Column(unique = true)
     private String mail;
 
-    protected Cycliste() {
+    protected Gestionnaire() {
     }
 
-    public Cycliste(String nom, String prenom, String mail, Integer capaciteMax, Boolean disponible, Double longitude, Double latitude) {
-        super(capaciteMax, disponible, longitude, latitude);
+    public Gestionnaire(String nom, String prenom, String mail) {
         this.nom = nom;
         this.prenom = prenom;
         this.mail = mail;
@@ -53,6 +55,7 @@ public class Cycliste extends Livreur implements Serializable {
 
     @Override
     public String toString() {
-        return "Cycliste{" + super.toString() + ", nom=" + nom + ", prenom=" + prenom + ", mail=" + mail + '}';
+        return "Gestionnaire{nom=" + nom + ", prenom=" + prenom + ", mail=" + mail + '}';
     }
+
 }

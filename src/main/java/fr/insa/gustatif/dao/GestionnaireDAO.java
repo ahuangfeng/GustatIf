@@ -1,6 +1,6 @@
 package fr.insa.gustatif.dao;
 
-import fr.insa.gustatif.metier.modele.Cycliste;
+import fr.insa.gustatif.metier.modele.Gestionnaire;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -11,31 +11,33 @@ import javax.persistence.Query;
 /**
  *
  */
-public class CyclisteDAO {
-
-    public boolean creerCycliste(Cycliste cycliste) throws PersistenceException {
+public class GestionnaireDAO {
+    
+    public boolean creerGestionnaire(Gestionnaire gestionnaire) throws PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
 
-        // Vérifie l'unicité de l'email du cycliste
-        if (existWithMail(cycliste.getMail())) {
+        // TODO: Lancer l'exception DuplicateMailExc au lieu du return
+        
+        // Vérifie l'unicité de l'email du gestionnaire
+        if (existWithMail(gestionnaire.getMail())) {
             return false;
         }
 
-        em.persist(cycliste);
+        em.persist(gestionnaire);
         return true;
     }
 
-    public Cycliste findById(long id) throws PersistenceException {
+    public Gestionnaire findById(long id) throws PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
-        return em.find(Cycliste.class, id);
+        return em.find(Gestionnaire.class, id);
     }
 
-    public Cycliste findByEmail(String mail) throws PersistenceException {
+    public Gestionnaire findByEmail(String mail) throws PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
-        Query emailQuery = em.createQuery("select c from Cycliste c where c.mail = :mail");
+        Query emailQuery = em.createQuery("select g from Gestionnaire g where g.mail = :mail");
         emailQuery.setParameter("mail", mail);
         try {
-            return (Cycliste) emailQuery.getSingleResult();
+            return (Gestionnaire) emailQuery.getSingleResult();
         } catch (NoResultException e) {
             return null;
         }
@@ -43,7 +45,7 @@ public class CyclisteDAO {
 
     public boolean existWithMail(String mail) throws PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
-        Query emailQuery = em.createQuery("select c from Cycliste c where c.mail = :mail");
+        Query emailQuery = em.createQuery("select g from Gestionnaire g where g.mail = :mail");
         emailQuery.setParameter("mail", mail);
         try {
             emailQuery.getSingleResult();
@@ -55,9 +57,9 @@ public class CyclisteDAO {
         return true;
     }
 
-    public List<Cycliste> findAll() throws PersistenceException {
+    public List<Gestionnaire> findAll() throws PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
-        Query q = em.createQuery("SELECT c FROM Cycliste c");
+        Query q = em.createQuery("SELECT g FROM Gestionnaire g");
         return q.getResultList();
     }
 }

@@ -28,10 +28,4 @@ public class RestaurantDAO {
         Query q = em.createQuery("SELECT r FROM Restaurant r");
         return q.getResultList();
     }
-
-    public List<Restaurant> findAllSortedByName() throws Exception {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        Query q = em.createQuery("SELECT r FROM Restaurant r ORDER BY r.denomination ASC");
-        return q.getResultList();
-    }
 }

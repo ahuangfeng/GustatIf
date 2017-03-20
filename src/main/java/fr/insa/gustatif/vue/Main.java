@@ -3,8 +3,6 @@ package fr.insa.gustatif.vue;
 import fr.insa.gustatif.dao.CommandeDAO;
 import fr.insa.gustatif.dao.JpaUtil;
 import fr.insa.gustatif.dao.LivreurDAO;
-import fr.insa.gustatif.dao.ProduitCommandeDAO;
-import fr.insa.gustatif.dao.ProduitDAO;
 import fr.insa.gustatif.exceptions.DuplicateEmailException;
 import fr.insa.gustatif.exceptions.IllegalUserInfoException;
 import fr.insa.gustatif.metier.modele.Client;
@@ -41,12 +39,12 @@ public class Main {
         // Test Panier
         Client clientPanier = clients.get((int) (Math.random() * clients.size()));
         Produit produitPanier = produitsDB.get((int) (Math.random() * produitsDB.size()));
-        sm.ajouterAuPanier(clientPanier, produitPanier,5);
+        //sm.ajouterAuPanier(clientPanier, produitPanier,5);
 
         // Tests Client
-        String nomClient = ServiceTechnique.GenererString();
-        String prenomClient = ServiceTechnique.GenererString();
-        //sm.creerClient(new Client(nomClient, prenomClient, nomClient + "." + prenomClient + "@client.fr", "Villeurbanne"));
+        String nomClient = ServiceTechnique.GenererString(true);
+        String prenomClient = ServiceTechnique.GenererString(true);
+        //sm.inscrireClient(new Client(nomClient, prenomClient, nomClient + "." + prenomClient + "@client.fr", "Villeurbanne"));
         for (Client result : sm.recupererClients()) {
             System.out.println(result);
         }
@@ -76,17 +74,17 @@ public class Main {
             System.out.println(produitCommande);
         }
         Commande commande = new Commande(clientCommande, new Date(), null, produits);
-        sm.creerCommande(commande);
+        //sm.creerCommande(commande);
         for (Commande res : sm.recupererCommandes()) {
             System.out.println(res);
         }
 
         // Tests Livreurs
-        sm.creerDrone(new Drone(20, 30, true, 12.325, 14.2115));
+        //sm.creerDrone(new Drone(20, 30, true, 14.2115, 12.325));
         
-        String nom = ServiceTechnique.GenererString();
-        String prenom = ServiceTechnique.GenererString();
-        sm.creerCycliste(new Cycliste(nom, prenom, nom + "." + prenom + "@gustatif.com", 30, true, 1.230, 5.256666));
+        String nom = ServiceTechnique.GenererString(true);
+        String prenom = ServiceTechnique.GenererString(true);
+        //sm.creerCycliste(new Cycliste(nom, prenom, nom + "." + prenom + "@gustatif.com", 30, true, 1.230, 5.256666));
         
         for (Livreur result : sm.recupererLivreur()) {
             System.out.println(result);
@@ -135,7 +133,7 @@ public class Main {
             System.out.println(commandeDao.findById(1202).toString());
             
             //modif
-            sm.retirerProduitDeCommande(1202, 82);
+            //sm.retirerProduitDeCommande(1202, 82);
             System.out.println(commandeDao.findById(1202).toString());
         } catch (Exception ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);

@@ -19,7 +19,7 @@ public class Drone extends Livreur implements Serializable {
     protected Drone() {
     }
 
-    public Drone(Integer vitesse, Integer capaciteMax, Boolean disponible, Double longitude, Double latitude) {
+    public Drone(Integer vitesse, Integer capaciteMax, Boolean disponible, Double latitude, Double longitude) {
         super(capaciteMax, disponible, longitude, latitude);
         this.vitesse = vitesse;
     }
