@@ -34,6 +34,16 @@ public class ClientDAO {
 
         em.persist(client);
     }
+    
+    public boolean modifierClient(Client client) throws Exception{
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        
+        if (existWithMail(client.getMail())) {
+            em.merge(client);
+            return true;
+        }
+        return false;
+    }
 
     public Client findById(long id) throws Exception {
         EntityManager em = JpaUtil.obtenirEntityManager();

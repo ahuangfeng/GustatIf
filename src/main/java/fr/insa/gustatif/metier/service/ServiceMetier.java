@@ -17,6 +17,7 @@ import fr.insa.gustatif.metier.modele.Client;
 import fr.insa.gustatif.metier.modele.Livreur;
 import fr.insa.gustatif.metier.modele.Commande;
 import fr.insa.gustatif.metier.modele.Produit;
+import fr.insa.gustatif.metier.modele.ProduitCommande;
 import fr.insa.gustatif.metier.modele.Restaurant;
 import fr.insa.gustatif.util.GeoTest;
 import java.util.ArrayList;
@@ -35,7 +36,7 @@ public class ServiceMetier {
     public ServiceMetier() {
         this.serviceTechnique = new ServiceTechnique();
     }
-
+    
     /**
      * Crée un client en vérifiant que le mail est unique.
      *
@@ -73,6 +74,21 @@ public class ServiceMetier {
                     + "Votre inscription au service Gustat'IF a malencontreusement échoué... "
                     + "Merci de recommencer ultérieusement."
             );
+            JpaUtil.annulerTransaction();
+            return false;
+        }
+    }
+    
+    
+    public boolean modifierClient(Client client) {
+        ClientDAO cd = new ClientDAO();
+        
+        JpaUtil.ouvrirTransaction();
+        try {
+            cd.modifierClient(client);
+            JpaUtil.validerTransaction();
+            return true;
+        } catch (Exception e) {
             JpaUtil.annulerTransaction();
             return false;
         }
@@ -151,6 +167,16 @@ public class ServiceMetier {
         return new ArrayList<>();
     }
 
+    public Client recupererClientsById(long id) {
+        ClientDAO clientDAO = new ClientDAO();
+        try {
+            return clientDAO.findById(id);
+        } catch (Exception ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+    
     public void ajouterAuPanier(Client client, Produit produit) {
         JpaUtil.ouvrirTransaction();
         ClientDAO clientDAO = new ClientDAO();
@@ -300,6 +326,30 @@ public class ServiceMetier {
         }
         return new ArrayList<>();
     }
+    
+    public Livreur recupererLivreur(long id) {
+        LivreurDAO livreurDAO = new LivreurDAO();
+        try {
+            return livreurDAO.findById(id);
+        } catch (Exception ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+    
+    public boolean modifierLivreur(Livreur livreur) {
+        JpaUtil.ouvrirTransaction();
+        LivreurDAO livreurDAO = new LivreurDAO();
+        try {
+            livreurDAO.modifierLivreur(livreur);
+            JpaUtil.validerTransaction();
+            return true;
+        } catch (Exception ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+            JpaUtil.annulerTransaction();
+            return false;
+        }
+    }
 
     public void creerCommande(Commande commande) {
         JpaUtil.ouvrirTransaction();
@@ -323,6 +373,50 @@ public class ServiceMetier {
         } catch (Exception ex) {
             Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
             return null;
+        }
+    }
+    
+    
+    public boolean modifierCommande(long id, Commande commande) {
+        JpaUtil.ouvrirTransaction();
+        CommandeDAO commandeDAO = new CommandeDAO();
+        try {
+            commandeDAO.modifierCommande(id, commande);
+            JpaUtil.validerTransaction();
+            return true;
+        } catch (Exception ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+            JpaUtil.annulerTransaction();
+            return false;
+        }
+    }
+    
+    public boolean retirerProduitDeCommande(long idCommande, long idProduit) {
+        JpaUtil.ouvrirTransaction();
+        boolean enleve = false;
+        CommandeDAO commandeDAO = new CommandeDAO();
+        try {
+            Commande com = commandeDAO.findById(idCommande);
+            List<ProduitCommande> produitsCommande = com.getProduits();
+            for (ProduitCommande prod : produitsCommande) {
+                if(prod.getProduit().getId()==idProduit){
+                    produitsCommande.remove(prod);
+                    enleve=true;
+                }
+            }
+            com.setProduits(produitsCommande);
+            
+            commandeDAO.modifierCommande(idCommande, com);
+            if(enleve){
+                JpaUtil.validerTransaction();
+            }else{
+                throw new Exception("ID du produit n'est pas trouvé dans la commande. ");
+            }
+            return true;
+        } catch (Exception ex) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+            JpaUtil.annulerTransaction();
+            return false;
         }
     }
 

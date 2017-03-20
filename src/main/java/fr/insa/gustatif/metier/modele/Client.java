@@ -1,7 +1,6 @@
 package fr.insa.gustatif.metier.modele;
 
 import com.google.maps.model.LatLng;
-import com.sun.javafx.scene.control.skin.VirtualFlow;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
