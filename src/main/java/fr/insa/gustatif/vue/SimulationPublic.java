@@ -4,10 +4,15 @@ import fr.insa.gustatif.exceptions.BadLocationException;
 import fr.insa.gustatif.exceptions.DuplicateEmailException;
 import fr.insa.gustatif.exceptions.IllegalUserInfoException;
 import fr.insa.gustatif.metier.modele.Client;
+import fr.insa.gustatif.metier.modele.Commande;
+import fr.insa.gustatif.metier.modele.EtatLivraison;
+import fr.insa.gustatif.metier.modele.EtatPaiement;
 import fr.insa.gustatif.metier.modele.Produit;
+import fr.insa.gustatif.metier.modele.ProduitCommande;
 import fr.insa.gustatif.metier.modele.Restaurant;
 import fr.insa.gustatif.metier.service.ServiceMetier;
 import fr.insa.gustatif.util.Saisie;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,10 +24,12 @@ public class SimulationPublic {
 
     Client identite;
     ServiceMetier serviceMetier;
+    List<ProduitCommande> panier;
 
     public SimulationPublic() {
         this.identite = null;
         this.serviceMetier = new ServiceMetier();
+        this.panier = new ArrayList<>();
     }
 
     public void run() {
@@ -31,11 +38,13 @@ public class SimulationPublic {
 
     private void accueil() {
         int choix = -1;
-        while (choix != 4) {
+        while (choix != 6) {
             System.out.println("Accueil de Gustat'IF.");
             afficherIdentite();
             choix = Saisie.choixMenu("Que voulez-vous faire ?", new String[]{
                 "Gestion compte / Connexion / Inscription",
+                "Voir toutes mes commandes",
+                "Voir commandes en cours",
                 "Restaurants",
                 "Contact",
                 "Quitter"
@@ -45,11 +54,27 @@ public class SimulationPublic {
                     gestionCompte();
                     break;
                 }
-                case 2: { // Restaurants
+                case 2:{
+                    if(identite != null){
+                        voirToutesCommandes();
+                    }else{
+                        System.out.println("Pas connecté!");
+                    }
+                    break;
+                }
+                case 3:{
+                    if(identite != null){
+                        voirCommandesEnCours();
+                    }else{
+                        System.out.println("Pas connecté!");
+                    }
+                    break;
+                }
+                case 4: { // Restaurants
                     restaurants();
                     break;
                 }
-                case 3: { // Contact
+                case 5: { // Contact
                     break;
                 }
             }
@@ -84,16 +109,20 @@ public class SimulationPublic {
                         System.out.println("L'#ID est invalide.");
                         break;
                     }
+                try {
                     details_restaurant(resto);
+                } catch (Exception ex) {
+                    Logger.getLogger(SimulationPublic.class.getName()).log(Level.SEVERE, null, ex);
+                }
                     break;
                 }
             }
         }
     }
 
-    private void details_restaurant(Restaurant restaurant) {
+    private void details_restaurant(Restaurant restaurant){
         int choix = -1;
-        while (choix != 2) {
+        while (choix != 3) {
             afficherIdentite();
             System.out.println("Détails du restaurant \"" + restaurant.getDenomination() + "\" :");
             System.out.println("  -> " + restaurant);
@@ -102,21 +131,30 @@ public class SimulationPublic {
             for (Produit produit : produits) {
                 System.out.println("  - " + produit);
             }
-
             choix = Saisie.choixMenu("Que voulez-vous faire ?", new String[]{
                 "Ajouter un produit au panier",
+                "Passer à la commande",
                 "Retour"
             });
             switch (choix) {
                 case 1: { // Ajouter un produit au panier
                     Integer idProduit = Saisie.lireInteger("Rentrez l'#ID du produit : ");
+                    Integer quantite = Saisie.lireInteger("Rentrez la quantité : ");
                     Produit produit = serviceMetier.recupererProduit(idProduit.longValue());
                     if (produit == null) {
                         System.out.println("L'#ID est invalide.");
                         break;
                     }
-                    ajouterAuPanier(produit);
+                    panier.add(new ProduitCommande(produit, quantite)); //TODO: gere si le produit exists!
+//                    ajouterAuPanier(produit, quantite); 
                     break;
+                }
+                case 2 : { try {
+                    //Passer a la commande
+                    passerALaCommande(panier);
+                } catch (Exception ex) {
+                    Logger.getLogger(SimulationPublic.class.getName()).log(Level.SEVERE, null, ex);
+                }
                 }
             }
         }
@@ -264,11 +302,71 @@ public class SimulationPublic {
                     "Connecté en tant que : "
                     + identite.getPrenom() + " " + identite.getNom() + "<" + identite.getMail() + ">"
             );
+            System.out.println("Panier actuel : ");
+            for (ProduitCommande produitCommande : this.panier) {
+                System.out.println("    "+produitCommande.toString());
+            }
         }
     }
+    /**
+     * TODO: Ajouter au panier n'existe plus!
+     * @param produit
+     * @param quantite 
+     */
+    private void ajouterAuPanier(Produit produit, int quantite) {
+        identite.ajouterAuPanier(new ProduitCommande(produit, quantite));
+    }
 
-    private void ajouterAuPanier(Produit produit) {
-        // TODO: Ajout au panier
-        System.out.println("Cette opération n'est pas encore gérée.");
+    private void passerALaCommande(List<ProduitCommande> listeProduits){  //TODO: verifier les exception et concretiser
+        Commande commandeActuel;
+        try {
+            commandeActuel = serviceMetier.creerCommande(identite,listeProduits);//c'est creerCommande qui donne un exception
+            System.out.println("Commande Créée.");
+            this.panier.clear();
+            int choix = -1;
+            afficherIdentite();
+            System.out.println("Commande \""+commandeActuel.getId()+"\" :");
+            System.out.println("  -> " + commandeActuel.toString());
+
+            choix = Saisie.choixMenu("Que voulez-vous faire ?", new String[]{
+                "Payer avec Carte bancaire",
+                "Payer en espèces",
+                "Retour"
+            });
+            switch (choix) {
+                case 1: { // Payer avec carte
+                    serviceMetier.payer(commandeActuel); //TODO faire qq chose.
+                    System.out.println("Commande "+commandeActuel.getId()+" payé avec carte bancaire.");
+                    System.out.println("Etat de la livraison : "+commandeActuel.getEtatLivaison() );
+                    break;
+                }
+                case 2 : { //Payer en especes
+                    serviceMetier.payerCommandeALaLivraison(commandeActuel);
+                    System.out.println("Commande "+commandeActuel.getId()+" avec paiement à la livraison.");
+                    System.out.println("Etat de la livraison : "+commandeActuel.getEtatLivaison() );
+                    break;
+                }
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(SimulationPublic.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        accueil();
+    }
+    
+    void voirToutesCommandes(){
+        List<Commande> listeCommandes = identite.getCommandes();
+        if(listeCommandes!=null){
+            for (Commande listeCommande : listeCommandes) {
+                System.out.println(listeCommande.toString());
+            }
+        }
+    }
+    void voirCommandesEnCours(){
+        List<Commande> liste = identite.getCommandes();
+        for (Commande commande : liste) {
+            if(commande.getEtatLivaison()!=EtatLivraison.LIVRE || commande.getEtatpaiement()!=EtatPaiement.PAYE){
+                System.out.println(commande.toString());
+            }
+        }
     }
 }

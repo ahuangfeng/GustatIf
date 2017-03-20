@@ -34,4 +34,11 @@ public class RestaurantDAO {
         Query q = em.createQuery("SELECT r FROM Restaurant r ORDER BY r.denomination ASC");
         return q.getResultList();
     }
+    
+    public long getRestaurantIdByProduit(Long idProduit){   //TODO : Verifier le JPQL
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        Query q = em.createQuery("SELECT r.id FROM Restaurant r join r.produits p where p.id="+idProduit);
+        long idRestaurant = (Long) q.getSingleResult();
+        return idRestaurant;
+    }
 }

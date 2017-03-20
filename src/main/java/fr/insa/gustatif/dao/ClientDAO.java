@@ -6,6 +6,7 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import fr.insa.gustatif.metier.modele.Client;
+import fr.insa.gustatif.metier.modele.Commande;
 import fr.insa.gustatif.metier.modele.Produit;
 import fr.insa.gustatif.metier.modele.ProduitCommande;
 import javax.persistence.NoResultException;
@@ -137,6 +138,12 @@ public class ClientDAO {
     public void viderPanier(Client client) {
         EntityManager em = JpaUtil.obtenirEntityManager();
         client.viderPanier();
+        em.merge(client);
+    }
+    
+    public void ajouterCommande(Client client, Commande commande) {
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        client.addCommande(commande);
         em.merge(client);
     }
 }

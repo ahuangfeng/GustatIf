@@ -113,4 +113,10 @@ public class CommandeDAO {
         em.merge(commande);
     }
     
+    public void setRestaurant(Long idProduit, Commande commande){
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        commande.setIdRestaurant(idProduit);
+        em.merge(commande);
+    }
+
 }

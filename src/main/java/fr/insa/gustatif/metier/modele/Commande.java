@@ -19,6 +19,7 @@ public class Commande implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
+    private Long idRestaurant;
     @OneToOne
     private Client client;
     @Temporal(javax.persistence.TemporalType.DATE)
@@ -51,6 +52,8 @@ public class Commande implements Serializable {
         }
         this.etatLivaison = EtatLivraison.EN_ATTENTE;
         this.etatpaiement = EtatPaiement.NONPAYE;
+        this.idRestaurant = null;
+        //TODO Mettre a jour le id Restaurant
     }
 
     public Long getId() {
@@ -120,6 +123,15 @@ public class Commande implements Serializable {
     protected void setPrix(Double prix) {
         this.prix = prix;
     }
+    
+    
+    public Long getIdRestaurant() {
+        return idRestaurant;
+    }
+
+    public void setIdRestaurant(Long idRestaurant) {
+        this.idRestaurant = idRestaurant;
+    }
 
     public void addProduit(Produit produit, Integer quantity) {
         // Persistance en cascade
@@ -137,6 +149,7 @@ public class Commande implements Serializable {
             r += "\n";
             r += produitCommande;
         }
+        r += "\n Livraison="+this.etatLivaison+", Paiement="+this.etatpaiement;
         return r;
     }
 }

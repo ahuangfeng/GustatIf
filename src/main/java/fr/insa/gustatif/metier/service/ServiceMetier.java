@@ -20,16 +20,13 @@ import fr.insa.gustatif.metier.modele.Commande;
 import fr.insa.gustatif.metier.modele.Produit;
 import fr.insa.gustatif.metier.modele.ProduitCommande;
 import fr.insa.gustatif.metier.modele.Restaurant;
-import fr.insa.gustatif.util.GeoTest;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.persistence.NoResultException;
 import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceException;
-import javax.persistence.RollbackException;
 
 /**
  * TODO: Annuler une commande
@@ -370,14 +367,23 @@ public class ServiceMetier {
         }
     }
 
-    public void panierToCommande(Client client) {
+    public Commande creerCommande(Client client ,List<ProduitCommande> listeProduit) throws Exception{
         JpaUtil.ouvrirTransaction();
-
         CommandeDAO commandeDAO = new CommandeDAO();
         ClientDAO clientDAO = new ClientDAO();
-        commandeDAO.creerCommande(new Commande(client, new Date() , null, client.getPanier()));
-        clientDAO.viderPanier(client);
+        RestaurantDAO restaurantDAO = new RestaurantDAO();
+        Commande commande = new Commande(client, new Date(), null, listeProduit);
+        long idRestaurant = restaurantDAO.getRestaurantIdByProduit(listeProduit.get(0).getId());
+        commandeDAO.setRestaurant(idRestaurant, commande);  //avant creer la commande verifie si chaque produit apartient au premier produit du panier
+        for (ProduitCommande produitCommande : listeProduit) {
+            if(restaurantDAO.getRestaurantIdByProduit(produitCommande.getProduit().getId()) != idRestaurant){
+                throw new Exception("Les produits de cette commande n'appartiennent pas au même restaurant !");
+            }
+        }
+        commandeDAO.creerCommande(commande);
+        clientDAO.ajouterCommande(client, commande);
         JpaUtil.validerTransaction();
+        return commande;
     }
 
     /**

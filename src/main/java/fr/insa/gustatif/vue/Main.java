@@ -76,7 +76,7 @@ public class Main {
             System.out.println(produitCommande);
         }
         Commande commande = new Commande(clientCommande, new Date(), null, produits);
-        sm.creerCommande(commande);
+        //sm.creerCommande(commande);
         for (Commande res : sm.recupererCommandes()) {
             System.out.println(res);
         }

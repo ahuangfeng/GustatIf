@@ -36,7 +36,7 @@ public class ProduitCommande implements Serializable {
     public Integer getQuantity() {
         return quantity;
     }
-
+    
     public void setProduit(Produit produit) {
         this.produit = produit;
     }
