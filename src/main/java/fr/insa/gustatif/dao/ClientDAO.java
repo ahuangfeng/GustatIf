@@ -10,6 +10,7 @@ import fr.insa.gustatif.metier.modele.Produit;
 import fr.insa.gustatif.metier.modele.ProduitCommande;
 import javax.persistence.NoResultException;
 import javax.persistence.NonUniqueResultException;
+import javax.persistence.PersistenceException;
 
 public class ClientDAO {
 
@@ -20,7 +21,7 @@ public class ClientDAO {
      * @throws fr.insa.gustatif.exceptions.DuplicateEmailException
      * @throws fr.insa.gustatif.exceptions.IllegalUserInfoException
      */
-    public void creerClient(Client client) throws DuplicateEmailException, IllegalUserInfoException {
+    public void creerClient(Client client) throws DuplicateEmailException, IllegalUserInfoException, PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
 
         // Vérifie l'unicité de l'email du client
@@ -29,16 +30,22 @@ public class ClientDAO {
         }
 
         // Vérifie la validité des informations
-        if (client.getNom().isEmpty() || client.getPrenom().isEmpty() || client.getAdresse().isEmpty()) {
-            throw new IllegalUserInfoException();
+        if (client.getNom().isEmpty()) {
+            throw new IllegalUserInfoException("Le nom ne peut pas être vide.");
+        }
+        if (client.getPrenom().isEmpty()) {
+            throw new IllegalUserInfoException("Le prénom ne peut pas être vide.");
+        }
+        if (client.getAdresse().isEmpty()) {
+            throw new IllegalUserInfoException("L'adresse ne peut pas être vide.");
         }
 
         em.persist(client);
     }
-    
-    public boolean modifierClient(Client client) throws Exception{
+
+    public boolean modifierClient(Client client) throws PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
-        
+
         if (existWithMail(client.getMail())) {
             em.merge(client);
             return true;
@@ -46,25 +53,23 @@ public class ClientDAO {
         return false;
     }
 
-    public Client findById(long id) throws Exception {
+    public Client findById(long id) {
         EntityManager em = JpaUtil.obtenirEntityManager();
-        Client client = null;
-        try {
-            client = em.find(Client.class, id);
-        } catch (Exception e) {
-            throw e;
-        }
-        return client;
+        return em.find(Client.class, id);
     }
 
-    public Client findByEmail(String mail) throws Exception {
+    public Client findByEmail(String mail) throws NonUniqueResultException, PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
         Query emailQuery = em.createQuery("select c from Client c where c.mail = :mail");
         emailQuery.setParameter("mail", mail);
-        return (Client) emailQuery.getSingleResult();
+        try {
+            return (Client) emailQuery.getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        }
     }
 
-    public boolean existWithMail(String mail) {
+    public boolean existWithMail(String mail) throws PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
         Query emailQuery = em.createQuery("select c from Client c where c.mail = :mail");
         emailQuery.setParameter("mail", mail);
@@ -78,7 +83,7 @@ public class ClientDAO {
         return true;
     }
 
-    public List<Client> findAll() throws Exception {
+    public List<Client> findAll() throws PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
         List<Client> clients = null;
         try {
@@ -96,32 +101,37 @@ public class ClientDAO {
         em.merge(client);
     }
 
-    public boolean modifierClient(Client client, String nom, String prenom, String email, String adresse) throws Exception {
+    /**
+     *
+     * @param client
+     * @param nom
+     * @param prenom
+     * @param email
+     * @param adresse
+     * @throws DuplicateEmailException
+     */
+    public void modifierClient(Client client, String nom, String prenom, String email, String adresse) throws DuplicateEmailException, PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
 
-        // Vérifie l'unicité de l'email du client, et de la validité des informations
-        if ((null != email && existWithMail(email))
-                || null != nom && nom.isEmpty()
-                || null != prenom && prenom.isEmpty()
-                || null != adresse && adresse.isEmpty()) {
-            return false;
+        // Vérifie l'unicité de l'email du client et la validité des informations
+        if (existWithMail(email)) {
+            throw new DuplicateEmailException(email);
         }
 
-        if (null != nom) {
+        if (!nom.isEmpty()) {
             client.setNom(nom);
         }
-        if (null != prenom) {
+        if (!prenom.isEmpty()) {
             client.setPrenom(prenom);
         }
-        if (null != email) {
+        if (!email.isEmpty()) {
             client.setMail(email);
         }
-        if (null != adresse) {
+        if (!adresse.isEmpty()) {
             client.setAdresse(adresse);
         }
 
         em.merge(client);
-        return true;
     }
 
     public void viderPanier(Client client) {

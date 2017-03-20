@@ -31,7 +31,6 @@ public class Client implements Serializable {
     @ManyToMany
     @JoinTable(name = "CLIENT_PANIER_PRODUITS")
     List<ProduitCommande> panier;
-
     protected Client() {
     }
 

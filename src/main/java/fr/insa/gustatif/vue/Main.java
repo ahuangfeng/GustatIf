@@ -46,7 +46,7 @@ public class Main {
         // Tests Client
         String nomClient = ServiceTechnique.GenererString();
         String prenomClient = ServiceTechnique.GenererString();
-        sm.creerClient(new Client(nomClient, prenomClient, nomClient + "." + prenomClient + "@client.fr", "Villeurbanne"));
+        //sm.creerClient(new Client(nomClient, prenomClient, nomClient + "." + prenomClient + "@client.fr", "Villeurbanne"));
         for (Client result : sm.recupererClients()) {
             System.out.println(result);
         }

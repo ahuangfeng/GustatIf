@@ -1,5 +1,6 @@
 package fr.insa.gustatif.vue;
 
+import fr.insa.gustatif.exceptions.BadLocationException;
 import fr.insa.gustatif.exceptions.DuplicateEmailException;
 import fr.insa.gustatif.exceptions.IllegalUserInfoException;
 import fr.insa.gustatif.metier.modele.Client;
@@ -128,21 +129,34 @@ public class SimulationPublic {
         }
         String nom = Saisie.lireChaine("Nom : ");
         String prenom = Saisie.lireChaine("Prénom : ");
-        String email = Saisie.lireChaine("Adresse mail : ");
-        // TODO: Vérification d'unicité du mail pendant la saisie
+        String email = null;
+        while (true) {
+            email = Saisie.lireChaine("Adresse mail : ");
+            if (serviceMetier.recupererClient(email) == null) {
+                break;
+            } else {
+                if (Saisie.choixMenu("Ce mail est déjà utilisé, que voulez-vous faire ?", new String[]{
+                    "Entrer un autre mail",
+                    "Annuler l'inscription"
+                }) == 2) { // Annuler l'inscription
+                    return;
+                }
+            }
+        }
         String adresse = Saisie.lireChaine("Adresse de livraison : ");
-        
+
         boolean cree;
         try {
             cree = serviceMetier.creerClient(new Client(nom, prenom, email, adresse));
         } catch (DuplicateEmailException ex) {
-            Logger.getLogger(SimulationPublic.class.getName()).log(Level.SEVERE, null, ex);
             cree = false;
             System.out.println("Ce mail est déjà utilisé !");
         } catch (IllegalUserInfoException ex) {
-            Logger.getLogger(SimulationPublic.class.getName()).log(Level.SEVERE, null, ex);
             cree = false;
-            System.out.println("Les informations que vous avez renseigné sont invalides !");
+            System.out.println(ex.getMessage());
+        } catch (BadLocationException ex) {
+            cree = false;
+            System.out.println("Votre adresse n'est pas reconnue !");
         }
 
         if (cree) {
@@ -156,7 +170,13 @@ public class SimulationPublic {
 
     private void connexion() {
         System.out.println("Connexion :");
-        Saisie.lireChaine("Email : ");
+        String email = Saisie.lireChaine("Email : ");
+        identite = serviceMetier.recupererClient(email);
+        if (null == identite) {
+            System.out.println("La connexion a échoué.");
+        } else {
+            System.out.println("Vous êtes connecté !");
+        }
     }
 
     private void gestionCompte() {
@@ -173,35 +193,34 @@ public class SimulationPublic {
                 });
                 switch (choix) {
                     case 1: { // Modifier mes informations
-                        System.out.println("Rentrez \"-\" pour ne pas modifier un champ.");
+                        System.out.println("Ne rentrez rien pour ne pas modifier un champ.");
                         String nom = Saisie.lireChaine("Nom : ");
                         String prenom = Saisie.lireChaine("Prénom : ");
-                        String email = Saisie.lireChaine("Adresse mail : ");
-                        // TODO: Vérification d'unicité du mail pendant la saisie
+                        String email = null;
+                        while (true) {
+                            email = Saisie.lireChaine("Adresse mail : ");
+                            if (serviceMetier.recupererClient(email) == null) {
+                                break;
+                            } else {
+                                if (Saisie.choixMenu("Ce mail est déjà utilisé, que voulez-vous faire ?", new String[]{
+                                    "Entrer un autre mail",
+                                    "Annuler l'inscription"
+                                }) == 2) { // Annuler l'inscription
+                                    return;
+                                }
+                            }
+                        }
                         String adresse = Saisie.lireChaine("Adresse de livraison : ");
 
-                        if (nom.isEmpty()) {
-                            nom = null;
-                        }
-                        if (prenom.isEmpty()) {
-                            prenom = null;
-                        }
-                        if (email.isEmpty()) {
-                            email = null;
-                        }
-                        if (adresse.isEmpty()) {
-                            adresse = null;
-                        }
-
-                        boolean modifie = serviceMetier.modifierClient(identite, nom, prenom, email, adresse);
-                        if (modifie) {
-                            System.out.println("Votre compte a bien été mis à jour.");
+                        try {
+                            serviceMetier.modifierClient(identite, nom, prenom, email, adresse);
+                        } catch (DuplicateEmailException ex) {
+                            System.out.println("Votre compte n'a pas pu être mis à jour, car cet email est déjà utilisé.");
                             afficherIdentite();
-                        } else {
-                            System.out.println("Votre compte n'a pas pu être mis à jour.");
-                            afficherIdentite();
+                            break;
                         }
-
+                        System.out.println("Votre compte a bien été mis à jour.");
+                        afficherIdentite();
                         break;
                     }
                     case 2: { // Déconnexion
@@ -243,7 +262,7 @@ public class SimulationPublic {
         } else {
             System.out.println(
                     "Connecté en tant que : "
-                    + identite.getPrenom() + identite.getPrenom() + "<" + identite.getMail() + ">"
+                    + identite.getPrenom() + " " + identite.getNom() + "<" + identite.getMail() + ">"
             );
         }
     }
