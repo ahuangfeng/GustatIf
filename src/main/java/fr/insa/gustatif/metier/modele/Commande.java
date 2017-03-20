@@ -8,6 +8,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Temporal;
@@ -28,6 +29,12 @@ public class Commande implements Serializable {
 
     @OneToMany(cascade = javax.persistence.CascadeType.ALL)
     private List<ProduitCommande> produitsCommande;
+    
+    @ManyToOne
+    private Livreur livreur;
+
+    private EtatPaiement etatpaiement;
+    private EtatLivraison etatLivaison;
 
     protected Commande() {
         this.produitsCommande = new ArrayList<>();
@@ -37,11 +44,13 @@ public class Commande implements Serializable {
         this.client = client;
         this.dateDeCommande = heureDeCommande;
         this.dateDeFin = heureDeFin;
-        this.produitsCommande = produits;
+        this.produitsCommande = new ArrayList<>(produits);
         this.prix = 0.;
         for (ProduitCommande produitCommande : this.produitsCommande) {
             this.prix += produitCommande.getProduit().getPrix() * produitCommande.getQuantity();
         }
+        this.etatLivaison = EtatLivraison.EN_ATTENTE;
+        this.etatpaiement = EtatPaiement.NONPAYE;
     }
 
     public Long getId() {
@@ -79,7 +88,31 @@ public class Commande implements Serializable {
     public void setDateDeFin(Date dateDeFin) {
         this.dateDeFin = dateDeFin;
     }
+    
+    public Livreur getLivreur() {
+        return livreur;
+    }
 
+    public void setLivreur(Livreur livreur) {
+        this.livreur = livreur;
+    }
+    
+    public EtatPaiement getEtatpaiement() {
+        return etatpaiement;
+    }
+
+    public void setEtatpaiement(EtatPaiement etatpaiement) {
+        this.etatpaiement = etatpaiement;
+    }
+
+    public EtatLivraison getEtatLivaison() {
+        return etatLivaison;
+    }
+
+    public void setEtatLivaison(EtatLivraison etatLivaison) {
+        this.etatLivaison = etatLivaison;
+    }
+    
     /**
      * Le prix est calculé automatiquement, cette méthode est donc protégée.
      * @param prix 
@@ -96,7 +129,7 @@ public class Commande implements Serializable {
     public void setProduits(List<ProduitCommande> com) {
         this.produitsCommande = com;
     }
-
+    
     @Override
     public String toString() {
         String r = "Commande #" + id + " de " + client.getMail() + ", " + prix + " €, effectuée à " + dateDeCommande + " et terminée à " + dateDeFin + " :";

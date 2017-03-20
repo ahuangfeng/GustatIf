@@ -7,6 +7,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import fr.insa.gustatif.metier.modele.Client;
 import fr.insa.gustatif.metier.modele.Produit;
+import fr.insa.gustatif.metier.modele.ProduitCommande;
 import javax.persistence.NoResultException;
 import javax.persistence.NonUniqueResultException;
 
@@ -89,9 +90,9 @@ public class ClientDAO {
         return clients;
     }
 
-    public void ajouterAuPanier(Client client, Produit produit) {
+    public void ajouterAuPanier(Client client, Produit produit, int quantite) {
         EntityManager em = JpaUtil.obtenirEntityManager();
-        client.ajouterAuPanier(produit);
+        client.ajouterAuPanier(new ProduitCommande(produit, quantite));
         em.merge(client);
     }
 
@@ -121,5 +122,11 @@ public class ClientDAO {
 
         em.merge(client);
         return true;
+    }
+
+    public void viderPanier(Client client) {
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        client.viderPanier();
+        em.merge(client);
     }
 }

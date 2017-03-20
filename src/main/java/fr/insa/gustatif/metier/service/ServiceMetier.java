@@ -21,6 +21,7 @@ import fr.insa.gustatif.metier.modele.ProduitCommande;
 import fr.insa.gustatif.metier.modele.Restaurant;
 import fr.insa.gustatif.util.GeoTest;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -177,10 +178,10 @@ public class ServiceMetier {
         return null;
     }
     
-    public void ajouterAuPanier(Client client, Produit produit) {
+    public void ajouterAuPanier(Client client, Produit produit, int quantite) {
         JpaUtil.ouvrirTransaction();
         ClientDAO clientDAO = new ClientDAO();
-        clientDAO.ajouterAuPanier(client, produit);
+        clientDAO.ajouterAuPanier(client, produit, quantite);
         JpaUtil.validerTransaction();
     }
     
@@ -351,12 +352,13 @@ public class ServiceMetier {
         }
     }
 
-    public void creerCommande(Commande commande) {
+    public void panierToCommande(Client client) {
         JpaUtil.ouvrirTransaction();
 
         CommandeDAO commandeDAO = new CommandeDAO();
-        commandeDAO.creerCommande(commande);
-
+        ClientDAO clientDAO = new ClientDAO();
+        commandeDAO.creerCommande(new Commande(client, new Date() , null, client.getPanier()));
+        clientDAO.viderPanier(client);
         JpaUtil.validerTransaction();
     }
 
@@ -444,4 +446,51 @@ public class ServiceMetier {
         }
         return null;
     }
+    
+    public boolean payerCommandeALaLivraison(Commande commande){ 
+        JpaUtil.ouvrirTransaction();
+
+        try {
+            CommandeDAO commandeDAO = new CommandeDAO();
+            commandeDAO.payerALaLivraison(commande.getId());
+            JpaUtil.validerTransaction();
+            return true;
+        } catch (Exception ex) {
+            System.err.println("Le paiement à la livraison a échoué !");
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+            JpaUtil.annulerTransaction();
+            return false;
+        }
+    }
+    
+    public boolean payer(Commande commande){
+        JpaUtil.ouvrirTransaction();
+
+        try {
+            CommandeDAO commandeDAO = new CommandeDAO();
+            commandeDAO.payer(commande.getId());
+            JpaUtil.validerTransaction();
+            return true;
+        } catch (Exception ex) {
+            System.err.println("Le paiement sur le site web a échoué !");
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+            JpaUtil.annulerTransaction();
+            return false;
+        }
+    }
+    
+    public void commandeLivree(Commande commande){
+        JpaUtil.ouvrirTransaction();
+        CommandeDAO commandeDAO = new CommandeDAO();
+        commandeDAO.livraisonComplete(commande);
+        JpaUtil.validerTransaction();
+    }
+    
+    public void livraisonEnCours(Commande commande){
+        JpaUtil.ouvrirTransaction();
+        CommandeDAO commandeDAO = new CommandeDAO();
+        commandeDAO.livraisonEnCours(commande);
+        JpaUtil.validerTransaction();
+    }
+    
 }

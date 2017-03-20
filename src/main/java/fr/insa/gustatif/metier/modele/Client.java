@@ -30,7 +30,7 @@ public class Client implements Serializable {
 
     @ManyToMany
     @JoinTable(name = "CLIENT_PANIER_PRODUITS")
-    List<Produit> panier;
+    List<ProduitCommande> panier;
 
     protected Client() {
     }
@@ -78,7 +78,7 @@ public class Client implements Serializable {
         return commandes;
     }
 
-    public List<Produit> getPanier() {
+    public List<ProduitCommande> getPanier() {
         return panier;
     }
 
@@ -108,8 +108,8 @@ public class Client implements Serializable {
         this.commandes.add(commande);
     }
 
-    public void ajouterAuPanier(Produit produit) {
-        this.panier.add(produit);
+    public void ajouterAuPanier(ProduitCommande produitCommande) {
+        this.panier.add(produitCommande);
     }
 
     public void viderPanier() {
@@ -122,7 +122,7 @@ public class Client implements Serializable {
         if (!panier.isEmpty()) {
             r += '\n';
             r += "  - Panier :";
-            for (Produit produit : panier) {
+            for (ProduitCommande produit : panier) {
                 r += '\n';
                 r += "      -> " + produit;
             }

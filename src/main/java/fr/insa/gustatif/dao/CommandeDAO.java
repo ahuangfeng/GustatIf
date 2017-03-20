@@ -4,6 +4,8 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import fr.insa.gustatif.metier.modele.Commande;
+import fr.insa.gustatif.metier.modele.EtatLivraison;
+import fr.insa.gustatif.metier.modele.EtatPaiement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.NoResultException;
@@ -39,7 +41,7 @@ public class CommandeDAO {
         }
     }
     
-    public boolean modifierCommande(long id, Commande commande){
+    public boolean modifierCommande(long id, Commande commande){ // TODO commande ne sers a rien
         EntityManager em = JpaUtil.obtenirEntityManager();
         try {
             Commande cm = findById(id);
@@ -65,4 +67,50 @@ public class CommandeDAO {
         }
         return commandes;
     }
+    
+    public boolean payer(long id){
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        Commande commande = null;
+        try{
+            commande = em.find(Commande.class, id);
+            commande.setEtatpaiement(EtatPaiement.PAYE);
+            return true;
+        }catch (Exception e){
+            throw e;
+        }
+    }
+    
+    public boolean payerALaLivraison(long id){
+        boolean res = false;
+        
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        Commande commande = null;
+        try{
+            commande = em.find(Commande.class, id);
+            commande.setEtatpaiement(EtatPaiement.PAYER_A_LA_LIVRAISON);
+            res = true;
+        }catch (Exception e){
+            throw e;
+        }
+        return res;
+    }
+
+    public void livraisonComplete(Commande commande) {
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        commande.setEtatLivaison(EtatLivraison.LIVRE);
+        em.merge(commande);
+    }
+
+    public void livraisonEnCours(Commande commande) {
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        commande.setEtatLivaison(EtatLivraison.EN_COURS);
+        em.merge(commande);
+    }
+    
+    public void livraisonEnAttente(Commande commande) {
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        commande.setEtatLivaison(EtatLivraison.EN_ATTENTE);
+        em.merge(commande);
+    }
+    
 }

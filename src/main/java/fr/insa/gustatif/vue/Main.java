@@ -5,6 +5,8 @@ import fr.insa.gustatif.dao.JpaUtil;
 import fr.insa.gustatif.dao.LivreurDAO;
 import fr.insa.gustatif.dao.ProduitCommandeDAO;
 import fr.insa.gustatif.dao.ProduitDAO;
+import fr.insa.gustatif.exceptions.DuplicateEmailException;
+import fr.insa.gustatif.exceptions.IllegalUserInfoException;
 import fr.insa.gustatif.metier.modele.Client;
 import fr.insa.gustatif.metier.modele.Cycliste;
 import fr.insa.gustatif.metier.modele.Drone;
@@ -26,7 +28,7 @@ import java.util.logging.Logger;
  */
 public class Main {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws DuplicateEmailException, IllegalUserInfoException {
         JpaUtil.init();
         JpaUtil.creerEntityManager();
 
@@ -39,7 +41,7 @@ public class Main {
         // Test Panier
         Client clientPanier = clients.get((int) (Math.random() * clients.size()));
         Produit produitPanier = produitsDB.get((int) (Math.random() * produitsDB.size()));
-        sm.ajouterAuPanier(clientPanier, produitPanier);
+        sm.ajouterAuPanier(clientPanier, produitPanier,5);
 
         // Tests Client
         String nomClient = ServiceTechnique.GenererString();
@@ -169,6 +171,8 @@ public class Main {
         } catch (Exception ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
+        
         
         JpaUtil.fermerEntityManager();
         JpaUtil.destroy();
