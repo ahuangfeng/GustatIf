@@ -30,7 +30,7 @@ public class Client implements Serializable {
 
     @ManyToMany
     @JoinTable(name = "CLIENT_PANIER_PRODUITS")
-    List<Produit> panier;
+    List<Produit> panier; // TODO: Tester si on peut commander un même produit en quantité 2
 
     protected Client() {
     }
