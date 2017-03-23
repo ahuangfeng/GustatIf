@@ -5,6 +5,7 @@ import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.GeocodingApi;
 import com.google.maps.OkHttpRequestHandler;
+import com.google.maps.errors.OverDailyLimitException;
 import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.DirectionsRoute;
 import com.google.maps.model.GeocodingResult;
@@ -29,7 +30,11 @@ public class GeoTest {
 
             return results[0].geometry.location;
 
+        } catch (OverDailyLimitException ex) {
+            Logger.getLogger(GeoTest.class.getName()).log(Level.SEVERE, "Quota Google Maps dépassé, location bidon utilisée");
+            return new LatLng(45.78126 + Math.random() / 10., 4.87221 + Math.random() / 10.);
         } catch (Exception ex) {
+            Logger.getLogger(GeoTest.class.getName()).log(Level.SEVERE, null, ex);
             return null;
         }
     }

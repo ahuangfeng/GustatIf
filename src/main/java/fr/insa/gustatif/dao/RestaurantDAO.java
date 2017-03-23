@@ -4,6 +4,7 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import fr.insa.gustatif.metier.modele.Restaurant;
+import javax.persistence.PersistenceException;
 
 public class RestaurantDAO {
 
@@ -12,33 +13,43 @@ public class RestaurantDAO {
         em.persist(restaurant);
     }
 
-    public Restaurant findById(long id) throws Exception {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        Restaurant restaurant = null;
+    public Restaurant findById(long id) {
         try {
-            restaurant = em.find(Restaurant.class, id);
-        } catch (Exception e) {
-            throw e;
+            EntityManager em = JpaUtil.obtenirEntityManager();
+            return em.find(Restaurant.class, id);
+        } catch (PersistenceException e) {
+            return null;
         }
-        return restaurant;
     }
 
-    public List<Restaurant> findAll() throws Exception {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        Query q = em.createQuery("SELECT r FROM Restaurant r");
-        return q.getResultList();
+    public List<Restaurant> findAll() {
+        try {
+            EntityManager em = JpaUtil.obtenirEntityManager();
+            Query q = em.createQuery("SELECT r FROM Restaurant r");
+            return q.getResultList();
+        } catch (PersistenceException e) {
+            return null;
+        }
     }
 
-    public List<Restaurant> findAllSortedByName() throws Exception {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        Query q = em.createQuery("SELECT r FROM Restaurant r ORDER BY r.denomination ASC");
-        return q.getResultList();
+    public List<Restaurant> findAllSortedByName() {
+        try {
+            EntityManager em = JpaUtil.obtenirEntityManager();
+            Query q = em.createQuery("SELECT r FROM Restaurant r ORDER BY r.denomination ASC");
+            return q.getResultList();
+        } catch (PersistenceException e) {
+            return null;
+        }
     }
-    
-    public long getRestaurantIdByProduit(Long idProduit){   //TODO : Verifier le JPQL
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        Query q = em.createQuery("SELECT r.id FROM Restaurant r join r.produits p where p.id="+idProduit);
-        long idRestaurant = (Long) q.getSingleResult();
-        return idRestaurant;
+
+    public Long getRestaurantIdByProduit(Long idProduit) { // TODO : Verifier le JPQL
+        try {
+            EntityManager em = JpaUtil.obtenirEntityManager();
+            Query q = em.createQuery("SELECT r.id FROM Restaurant r JOIN r.produits p where p.id=:idProduit");
+            q.setParameter("idProduit", idProduit);
+            return (Long) q.getSingleResult();
+        } catch (PersistenceException e) {
+            return null;
+        }
     }
 }

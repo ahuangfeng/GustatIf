@@ -1,5 +1,6 @@
 package fr.insa.gustatif.dao;
 
+import fr.insa.gustatif.exceptions.DuplicateEmailException;
 import fr.insa.gustatif.metier.modele.Cycliste;
 import java.util.List;
 import javax.persistence.EntityManager;
@@ -13,16 +14,15 @@ import javax.persistence.Query;
  */
 public class CyclisteDAO {
 
-    public boolean creerCycliste(Cycliste cycliste) throws PersistenceException {
+    public void creerCycliste(Cycliste cycliste) throws PersistenceException, DuplicateEmailException {
         EntityManager em = JpaUtil.obtenirEntityManager();
 
         // Vérifie l'unicité de l'email du cycliste
         if (existWithMail(cycliste.getMail())) {
-            return false;
+            throw new DuplicateEmailException(cycliste.getMail());
         }
 
         em.persist(cycliste);
-        return true;
     }
 
     public Cycliste findById(long id) throws PersistenceException {

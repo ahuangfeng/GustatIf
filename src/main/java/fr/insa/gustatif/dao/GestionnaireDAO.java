@@ -1,5 +1,6 @@
 package fr.insa.gustatif.dao;
 
+import fr.insa.gustatif.exceptions.DuplicateEmailException;
 import fr.insa.gustatif.metier.modele.Gestionnaire;
 import java.util.List;
 import javax.persistence.EntityManager;
@@ -13,18 +14,14 @@ import javax.persistence.Query;
  */
 public class GestionnaireDAO {
     
-    public boolean creerGestionnaire(Gestionnaire gestionnaire) throws PersistenceException {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-
-        // TODO: Lancer l'exception DuplicateMailExc au lieu du return
-        
+    public void creerGestionnaire(Gestionnaire gestionnaire) throws PersistenceException, DuplicateEmailException {
         // Vérifie l'unicité de l'email du gestionnaire
         if (existWithMail(gestionnaire.getMail())) {
-            return false;
+            throw new DuplicateEmailException(gestionnaire.getMail());
         }
 
+        EntityManager em = JpaUtil.obtenirEntityManager();
         em.persist(gestionnaire);
-        return true;
     }
 
     public Gestionnaire findById(long id) throws PersistenceException {

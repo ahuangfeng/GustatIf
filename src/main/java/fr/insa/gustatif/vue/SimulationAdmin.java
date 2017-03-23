@@ -92,7 +92,11 @@ public class SimulationAdmin {
                     break;
                 }
                 case 2: { // Voir mes commandes en cours
-                    cycliste_voir_commandes();
+                    if (null != identiteCycliste) {
+                        voirCommandesCycliste(identiteCycliste);
+                    } else {
+                        System.out.println("Vous n'êtes pas connecté.");
+                    }
                     break;
                 }
                 case 3: { // Valider ma commande en cours
@@ -140,25 +144,23 @@ public class SimulationAdmin {
         }
     }
 
-    private void cycliste_voir_commandes() {
-        if (null == identiteCycliste) {
-            System.out.println("Vous n'êtes pas connecté.");
-            return;
-        }
-        if (identiteCycliste.getCommandesLivrees().isEmpty()) {
-            System.out.println("Aucune commande livrée.");
-        } else {
-            System.out.println("Livrées :");
-            for (Commande commandesLivree : identiteCycliste.getCommandesLivrees()) {
-                System.out.println("  - " + commandesLivree);
+    private void voirCommandesCycliste(Livreur livreur) {
+        if (null != livreur) {
+            if (livreur.getCommandesLivrees().isEmpty()) {
+                System.out.println("Aucune commande livrée.");
+            } else {
+                System.out.println("Livrées :");
+                for (Commande commandesLivree : livreur.getCommandesLivrees()) {
+                    System.out.println("  - " + commandesLivree);
+                }
             }
-        }
 
-        if (null != identiteCycliste.getCommandeEnCours()) {
-            System.out.println("En cours de livraison :");
-            System.out.println(identiteCycliste.getCommandeEnCours());
-        } else {
-            System.out.println("Aucune commande en cours de livraison.");
+            if (null != livreur.getCommandeEnCours()) {
+                System.out.println("En cours de livraison :");
+                System.out.println(livreur.getCommandeEnCours());
+            } else {
+                System.out.println("Aucune commande en cours de livraison.");
+            }
         }
     }
 
@@ -236,9 +238,29 @@ public class SimulationAdmin {
             return;
         }
 
-        System.out.println("Liste des commandes :");
-        for (Commande commande : serviceMetier.recupererCommandes()) {
-            System.out.println("  - " + commande);
+        afficherIdentite();
+        int choix = Saisie.choixMenu("Quelles commandes lister ?", new String[]{
+            "D'un livreur particulier",
+            "Toutes les commandes",
+            "Retour"
+        });
+        switch (choix) {
+            case 1: { // D'un livreur particulier
+                System.out.println("Liste des commandes :");
+                for (Commande commande : serviceMetier.recupererCommandes()) {
+                    System.out.println("  - " + commande);
+                }
+                break;
+            }
+            case 2: { // Toutes les commandes
+                Livreur livreur = serviceMetier.recupererLivreur(Saisie.lireInteger("#ID du livreur : ").longValue());
+                if (null == livreur) {
+                    System.out.println("#ID invalide.");
+                } else {
+                    voirCommandesCycliste(livreur);
+                }
+                break;
+            }
         }
     }
 

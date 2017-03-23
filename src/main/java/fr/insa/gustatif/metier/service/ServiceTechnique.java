@@ -2,7 +2,9 @@ package fr.insa.gustatif.metier.service;
 
 import com.google.maps.model.LatLng;
 import com.google.maps.model.TravelMode;
+import fr.insa.gustatif.dao.JpaUtil;
 import fr.insa.gustatif.exceptions.BadLocationException;
+import fr.insa.gustatif.metier.modele.ProduitCommande;
 import fr.insa.gustatif.util.GeoTest;
 import java.io.PrintStream;
 import java.util.regex.Matcher;
@@ -16,8 +18,8 @@ public class ServiceTechnique {
     static final Pattern VALID_EMAIL_ADDRESS_REGEX
             = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
 
-    void EnvoyerMail(String destinataire, String sujet, String corps) {
-        AfficherSeparateur(System.out);
+    void envoyerMail(String destinataire, String sujet, String corps) {
+        afficherSeparateur(System.out);
 
         System.out.println("Expéditeur : gustatif@gustatif.com");
         System.out.println("Pour : " + destinataire);
@@ -25,14 +27,14 @@ public class ServiceTechnique {
         System.out.println("Corps :");
         System.out.println(corps);
 
-        AfficherSeparateur(System.out);
+        afficherSeparateur(System.out);
     }
 
-    void AfficherSeparateur(PrintStream ps) {
+    void afficherSeparateur(PrintStream ps) {
         ps.println("-----------------------------------------------------------------------");
     }
 
-    public static String GenererString(boolean capitalized) {
+    public static String genererString(boolean capitalized) {
         int longueur = 3 + (int) (Math.random() * 2);
         String r = "";
         for (int i = 0; i < longueur; i++) {
@@ -44,7 +46,7 @@ public class ServiceTechnique {
         return r;
     }
 
-    public boolean VerifierMail(String email) {
+    public boolean verifierMail(String email) {
         Matcher matcher = VALID_EMAIL_ADDRESS_REGEX.matcher(email);
         return matcher.find();
     }
@@ -80,5 +82,4 @@ public class ServiceTechnique {
         }
         return r;
     }
-
 }

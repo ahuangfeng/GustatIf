@@ -2,6 +2,7 @@ package fr.insa.gustatif.vue;
 
 import fr.insa.gustatif.exceptions.BadLocationException;
 import fr.insa.gustatif.exceptions.DuplicateEmailException;
+import fr.insa.gustatif.exceptions.IllegalCommandException;
 import fr.insa.gustatif.exceptions.IllegalUserInfoException;
 import fr.insa.gustatif.metier.modele.Client;
 import fr.insa.gustatif.metier.modele.Commande;
@@ -12,22 +13,27 @@ import fr.insa.gustatif.metier.service.ServiceMetier;
 import fr.insa.gustatif.util.Saisie;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.persistence.PersistenceException;
 
 /**
  *
  */
-public class SimulationPublic {
+public class SimulationPublique {
 
     Client identite;
     ServiceMetier serviceMetier;
-    List<ProduitCommande> panier;
 
-    public SimulationPublic() {
+    List<ProduitCommande> panier;
+    Long panierIdRestaurant;
+
+    public SimulationPublique() {
         this.identite = null;
         this.serviceMetier = new ServiceMetier();
         this.panier = new ArrayList<>();
+        this.panierIdRestaurant = -1L;
     }
 
     public void run() {
@@ -36,14 +42,14 @@ public class SimulationPublic {
 
     private void accueil() {
         int choix = -1;
-        while (choix != 5) {
+        while (choix != 4) {
             System.out.println("Accueil de Gustat'IF.");
             afficherIdentite();
             choix = Saisie.choixMenu("Que voulez-vous faire ?", new String[]{
                 "Gestion compte / Connexion / Inscription",
+                // TODO: Gestion du panier
                 "Voir toutes mes commandes",
                 "Restaurants",
-                "Contact",
                 "Quitter"
             });
             switch (choix) {
@@ -51,26 +57,26 @@ public class SimulationPublic {
                     gestionCompte();
                     break;
                 }
-                case 2:{
-                    if(identite != null){
-                        voirToutesCommandes();
-                    }else{
-                        System.out.println("Pas connecté!");
+                case 2: {
+                    if (null != identite) {
+                        voirToutesMesCommandes();
+                    } else {
+                        System.out.println("Vous n'êtes pas connecté.");
                     }
                     break;
                 }
                 case 3: { // Restaurants
-                    restaurants();
-                    break;
-                }
-                case 4: { // Contact
+                    try {
+                        restaurants();
+                    } catch (BackToHomeException e) {
+                    }
                     break;
                 }
             }
         }
     }
 
-    private void restaurants() {
+    private void restaurants() throws BackToHomeException {
         int choix = -1;
         while (choix != 2) {
             afficherIdentite();
@@ -84,7 +90,7 @@ public class SimulationPublic {
                 }
             } catch (Exception ex) {
                 System.out.println("Erreur lors de la récupération de la liste des restaurants.");
-                Logger.getLogger(SimulationPublic.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
             }
 
             choix = Saisie.choixMenu("Que voulez-vous faire ?", new String[]{
@@ -99,28 +105,29 @@ public class SimulationPublic {
                         System.out.println("L'#ID est invalide.");
                         break;
                     }
-                try {
-                    details_restaurant(resto);
-                } catch (Exception ex) {
-                    Logger.getLogger(SimulationPublic.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                    try {
+                        details_restaurant(resto);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                     break;
                 }
             }
         }
     }
 
-    private void details_restaurant(Restaurant restaurant){
+    private void details_restaurant(Restaurant restaurant) throws BackToHomeException {
         int choix = -1;
         while (choix != 3) {
             afficherIdentite();
             System.out.println("Détails du restaurant \"" + restaurant.getDenomination() + "\" :");
             System.out.println("  -> " + restaurant);
             System.out.println("Liste des produits :");
-            List<Produit> produits = serviceMetier.recupererProduitsFromRestaurant(restaurant.getId());
+            List<Produit> produits = restaurant.getProduits();
             for (Produit produit : produits) {
                 System.out.println("  - " + produit);
             }
+
             choix = Saisie.choixMenu("Que voulez-vous faire ?", new String[]{
                 "Ajouter un produit au panier",
                 "Passer à la commande",
@@ -130,21 +137,28 @@ public class SimulationPublic {
                 case 1: { // Ajouter un produit au panier
                     Integer idProduit = Saisie.lireInteger("Rentrez l'#ID du produit : ");
                     Integer quantite = Saisie.lireInteger("Rentrez la quantité : ");
+                    if (0 == quantite) {
+                        System.out.println("Produit non ajouté.");
+                        break;
+                    }
                     Produit produit = serviceMetier.recupererProduit(idProduit.longValue());
-                    if (produit == null) {
+                    if (null == produit) {
                         System.out.println("L'#ID est invalide.");
                         break;
                     }
-                    panier.add(new ProduitCommande(produit, quantite)); //TODO: gere si le produit exists!
-//                    ajouterAuPanier(produit, quantite); 
+                    if (!ajouterAuPanier(produit, quantite, restaurant.getId())) {
+                        System.out.println("Impossible d'ajouter le produit :");
+                        System.out.println("Tous les produits d'une même commande doivent provenir d'un unique restaurant.");
+                    }
+                    System.out.println("Produit ajouté au panier.");
                     break;
                 }
-                case 2 : { try {
-                    //Passer a la commande
-                    passerALaCommande(panier);
-                } catch (Exception ex) {
-                    Logger.getLogger(SimulationPublic.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                case 2: { // Passer a la commande
+                    try {
+                        passerALaCommande(panier);
+                    } catch (Exception ex) {
+                        Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             }
         }
@@ -198,7 +212,7 @@ public class SimulationPublic {
 
     private void connexion() {
         System.out.println("Connexion :");
-        String email = Saisie.lireChaine("Email : ");
+        String email = Saisie.lireChaine("Email : ").toLowerCase();
         identite = serviceMetier.recupererClient(email);
         if (null == identite) {
             System.out.println("La connexion a échoué.");
@@ -294,60 +308,109 @@ public class SimulationPublic {
         } else {
             System.out.println(
                     "Connecté en tant que : "
-                    + identite.getPrenom() + " " + identite.getNom() + "<" + identite.getMail() + ">"
+                    + identite.getPrenom() + " " + identite.getNom() + " <" + identite.getMail() + ">"
             );
+        }
+        if (!this.panier.isEmpty()) {
             System.out.println("Panier actuel : ");
             for (ProduitCommande produitCommande : this.panier) {
-                System.out.println("    "+produitCommande.toString());
+                System.out.println("  - " + produitCommande);
             }
         }
     }
+
     /**
-     * TODO: Ajouter au panier n'existe plus!
+     *
      * @param produit
-     * @param quantite 
+     * @param quantite
      */
-    private void ajouterAuPanier(Produit produit, int quantite) {
-        identite.ajouterAuPanier(new ProduitCommande(produit, quantite));
+    private boolean ajouterAuPanier(Produit produit, int quantite, Long idRestaurant) {
+        if (panier.isEmpty()) {
+            panierIdRestaurant = idRestaurant;
+        } else {
+            if (!Objects.equals(idRestaurant, panierIdRestaurant)) {
+                return false;
+            }
+        }
+        for (ProduitCommande pc : panier) {
+            if (Objects.equals(pc.getProduit().getId(), produit.getId())) {
+                pc.setQuantity(pc.getQuantity() + quantite);
+                return true;
+            }
+        }
+        panier.add(new ProduitCommande(produit, quantite));
+        return true;
     }
 
-    private void passerALaCommande(List<ProduitCommande> listeProduits){  //TODO: verifier les exception et concretiser
-        Commande commandeActuel;
-        try {
-            commandeActuel = serviceMetier.creerCommande(identite,listeProduits);//c'est creerCommande qui donne un exception
-            System.out.println("Commande Créée.");
-            this.panier.clear();
-            int choix = -1;
-            afficherIdentite();
-            System.out.println("Commande \""+commandeActuel.getId()+"\" :");
-            System.out.println("  -> " + commandeActuel.toString());
+    private void viderPanier() {
+        this.panier.clear();
+        this.panierIdRestaurant = -1L;
+    }
 
-            choix = Saisie.choixMenu("Que voulez-vous faire ?", new String[]{
-                "Payer avec Carte bancaire",
-                "Payer en espèces",
-                "Retour"
-            });
-            switch (choix) { //TODO les deux payer sont pareil!
-                case 1: { // Payer avec carte
-                    System.out.println("Commande "+commandeActuel.getId()+" payé avec carte bancaire.");
-                    break;
+    private void passerALaCommande(List<ProduitCommande> listeProduits) throws BackToHomeException {
+        while (true) {
+            afficherIdentite();
+            if (null == identite) { // Non connecté
+                System.out.println("Vous devez vous connecter avant de commander.");
+                int choix = Saisie.choixMenu("Que voulez-vous faire ?", new String[]{
+                    "M'identifier",
+                    "Vider mon panier et retourner à l'accueil",
+                    "Retour"
+                });
+                switch (choix) {
+                    case 1: { // M'identifier
+                        gestionCompte();
+                        break;
+                    }
+                    case 2: { // Vider mon panier et retourner à l'accueil
+                        viderPanier();
+                        throw new BackToHomeException();
+                    }
+                    case 3: { // Retour
+                        return;
+                    }
                 }
-                case 2 : { //Payer en especes
-                    System.out.println("Commande "+commandeActuel.getId()+" avec paiement à la livraison.");
-                    break;
+            } else { // Connecté
+                int choix = Saisie.choixMenu("Que voulez-vous faire ?", new String[]{
+                    "Payer par carte bancaire",
+                    "Retour"
+                });
+                switch (choix) {
+                    case 1: { // Payer par carte bancaire
+                        try {
+                            Commande commande = serviceMetier.creerCommande(identite, listeProduits);
+                            panier.clear();
+
+                            System.out.println("Commande créée avec l'#ID " + commande.getId() + " :");
+                            System.out.println(commande);
+
+                            throw new BackToHomeException();
+                            
+                        } catch (PersistenceException ex) {
+                            System.out.println("Erreur critique lors de la création de la commande.");
+                            Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
+                        } catch (IllegalCommandException ex) {
+                            System.out.println("Impossible de créer la commande :");
+                            System.out.println(ex.getMessage());
+                        }
+                    }
+                    case 2: { // Retour
+                        return;
+                    }
                 }
             }
-        } catch (Exception ex) {
-            Logger.getLogger(SimulationPublic.class.getName()).log(Level.SEVERE, null, ex);
         }
-        accueil();
     }
-    
-    void voirToutesCommandes(){
-        List<Commande> listeCommandes = identite.getCommandes();
-        if(listeCommandes!=null){
+
+    void voirToutesMesCommandes() {
+        afficherIdentite();
+        if (identite.getCommandes().isEmpty()) {
+            System.out.println("Vous n'avez passé aucune commande.");
+        } else {
+            System.out.println("Voici l'historique de vos commandes :");
+            List<Commande> listeCommandes = identite.getCommandes();
             for (Commande listeCommande : listeCommandes) {
-                System.out.println(listeCommande.toString());
+                System.out.println(listeCommande);
             }
         }
     }

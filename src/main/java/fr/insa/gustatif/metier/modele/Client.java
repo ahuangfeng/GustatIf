@@ -4,6 +4,7 @@ import com.google.maps.model.LatLng;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -11,6 +12,8 @@ import javax.persistence.Id;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
 
 @Entity
 public class Client implements Serializable {
@@ -20,6 +23,7 @@ public class Client implements Serializable {
     private Long id;
     private String nom;
     private String prenom;
+    @Column(unique = true)
     private String mail;
     private String adresse;
     private Double latitude;
@@ -28,10 +32,14 @@ public class Client implements Serializable {
     @OneToMany
     List<Commande> commandes;
 
-    @ManyToMany
-    @JoinTable(name = "CLIENT_PANIER_PRODUITS")
-    List<ProduitCommande> panier;
+    @PrePersist
+    @PreUpdate
+    private void prepare() {
+        this.mail = mail == null ? null : mail.toLowerCase();
+    }
+    
     protected Client() {
+        this.commandes = new ArrayList<>();
     }
 
     public Client(String nom, String prenom, String mail, String adresse) {
@@ -42,7 +50,6 @@ public class Client implements Serializable {
         this.longitude = null;
         this.latitude = null;
         this.commandes = new ArrayList<>();
-        this.panier = new ArrayList<>();
     }
 
     public Long getId() {
@@ -77,10 +84,6 @@ public class Client implements Serializable {
         return commandes;
     }
 
-    public List<ProduitCommande> getPanier() {
-        return panier;
-    }
-
     public void setNom(String nom) {
         this.nom = nom;
     }
@@ -107,25 +110,8 @@ public class Client implements Serializable {
         this.commandes.add(commande);
     }
 
-    public void ajouterAuPanier(ProduitCommande produitCommande) {
-        this.panier.add(produitCommande);
-    }
-
-    public void viderPanier() {
-        this.panier.clear();
-    }
-
     @Override
     public String toString() {
-        String r = "Client{" + "id=" + id + ", nom=" + nom + ", prenom=" + prenom + ", mail=" + mail + ", adresse=" + adresse + ", longitude=" + longitude + ", latitude=" + latitude + '}';
-        if (!panier.isEmpty()) {
-            r += '\n';
-            r += "  - Panier :";
-            for (ProduitCommande produit : panier) {
-                r += '\n';
-                r += "      -> " + produit;
-            }
-        }
-        return r;
+        return "Client{" + "id=" + id + ", nom=" + nom + ", prenom=" + prenom + ", mail=" + mail + ", adresse=" + adresse + ", longitude=" + longitude + ", latitude=" + latitude + '}';
     }
 }

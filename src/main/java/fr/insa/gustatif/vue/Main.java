@@ -29,7 +29,7 @@ public class Main {
     public static void main(String[] args) throws DuplicateEmailException, IllegalUserInfoException {
         JpaUtil.init();
         JpaUtil.creerEntityManager();
-
+/*
         // Tests
         ServiceMetier sm = new ServiceMetier();
 
@@ -169,7 +169,7 @@ public class Main {
         } catch (Exception ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+        */
         
         
         JpaUtil.fermerEntityManager();

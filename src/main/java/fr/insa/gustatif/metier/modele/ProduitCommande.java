@@ -47,6 +47,6 @@ public class ProduitCommande implements Serializable {
 
     @Override
     public String toString() {
-        return "  - " + quantity + " x " + produit;
+        return quantity + " x " + produit;
     }
 }

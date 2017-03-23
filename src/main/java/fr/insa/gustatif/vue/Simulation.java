@@ -3,6 +3,8 @@ package fr.insa.gustatif.vue;
 import fr.insa.gustatif.dao.JpaUtil;
 import fr.insa.gustatif.metier.service.ServiceMetier;
 import fr.insa.gustatif.util.Saisie;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -10,10 +12,14 @@ import fr.insa.gustatif.util.Saisie;
 public class Simulation {
 
     public static void main(String[] args) {
-        JpaUtil.init();
-
-        // TODO: A METTRE DANS CHAQUE METHODE DE SERVICE
-        JpaUtil.creerEntityManager();
+        try {
+            JpaUtil.init();
+        } catch (Exception e) {
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, 
+                    "Impossible d'initialiser le contexte de persistance. Le serveur de BDD est sûrement arrêté."
+            );
+            System.exit(1);
+        }
 
         int choix = -1;
         while (choix != 4) {
@@ -26,7 +32,7 @@ public class Simulation {
 
             switch (choix) {
                 case 1: {
-                    SimulationPublic sp = new SimulationPublic();
+                    SimulationPublique sp = new SimulationPublique();
                     sp.run();
                     break;
                 }
@@ -43,7 +49,6 @@ public class Simulation {
             }
         }
 
-        JpaUtil.fermerEntityManager();
         JpaUtil.destroy();
     }
 }

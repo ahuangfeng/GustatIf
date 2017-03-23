@@ -19,7 +19,7 @@ public class Commande implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
-    private Long idRestaurant;
+    private Restaurant restaurant;
     @OneToOne
     private Client client;
     @Temporal(javax.persistence.TemporalType.DATE)
@@ -38,7 +38,8 @@ public class Commande implements Serializable {
         this.produitsCommande = new ArrayList<>();
     }
 
-    public Commande(Client client, Date heureDeCommande, Date heureDeFin, List<ProduitCommande> produits) {
+    public Commande(Client client, Date heureDeCommande, Date heureDeFin, List<ProduitCommande> produits, Restaurant restaurant) {
+        this.restaurant = restaurant;
         this.client = client;
         this.dateDeCommande = heureDeCommande;
         this.dateDeFin = heureDeFin;
@@ -47,12 +48,14 @@ public class Commande implements Serializable {
         for (ProduitCommande produitCommande : this.produitsCommande) {
             this.prix += produitCommande.getProduit().getPrix() * produitCommande.getQuantity();
         }
-        this.idRestaurant = null;
-        //TODO Mettre a jour le id Restaurant
     }
 
     public Long getId() {
         return id;
+    }
+
+    public Restaurant getRestaurant() {
+        return restaurant;
     }
 
     public Client getClient() {
@@ -73,6 +76,10 @@ public class Commande implements Serializable {
 
     public List<ProduitCommande> getProduits() {
         return produitsCommande;
+    }
+
+    public void setRestaurant(Restaurant restaurant) {
+        this.restaurant = restaurant;
     }
 
     public void setClient(Client client) {
@@ -96,29 +103,11 @@ public class Commande implements Serializable {
     }
     
     /**
-     * Le prix est calculé automatiquement, cette méthode est donc protégée.
+     * Le prix est calculé automatiquement dans le constructeur.
      * @param prix 
      */
-    protected void setPrix(Double prix) {
+    public void setPrix(Double prix) {
         this.prix = prix;
-    }
-    
-    
-    public Long getIdRestaurant() {
-        return idRestaurant;
-    }
-
-    public void setIdRestaurant(Long idRestaurant) {
-        this.idRestaurant = idRestaurant;
-    }
-
-    public void addProduit(Produit produit, Integer quantity) {
-        // Persistance en cascade
-        this.produitsCommande.add(new ProduitCommande(produit, quantity));
-    }
-    
-    public void setProduits(List<ProduitCommande> com) {
-        this.produitsCommande = com;
     }
     
     @Override
@@ -126,7 +115,7 @@ public class Commande implements Serializable {
         String r = "Commande #" + id + " de " + client.getMail() + ", " + prix + " €, effectuée à " + dateDeCommande + " et terminée à " + dateDeFin + " :";
         for (ProduitCommande produitCommande : produitsCommande) {
             r += "\n";
-            r += produitCommande;
+            r += "    - " + produitCommande;
         }
         return r;
     }
