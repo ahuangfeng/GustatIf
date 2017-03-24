@@ -18,7 +18,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.PersistenceException;
 
-/**
+/** TODO : si l'utilisateur se déconnecte, le panier se vide ou pas?
  *
  */
 public class SimulationPublique {
@@ -148,7 +148,7 @@ public class SimulationPublique {
                     }
                     if (!ajouterAuPanier(produit, quantite, restaurant.getId())) {
                         System.out.println("Impossible d'ajouter le produit :");
-                        System.out.println("Tous les produits d'une même commande doivent provenir d'un unique restaurant.");
+                        System.out.println("Tous les produits d'une même commande doivent provenir d'un unique restaurant. Restaurant actuel : #"+restaurant.getId());
                     }
                     System.out.println("Produit ajouté au panier.");
                     break;
