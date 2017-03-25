@@ -8,6 +8,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.Version;
 
 @Entity
 public class Restaurant implements Serializable {
@@ -19,6 +20,16 @@ public class Restaurant implements Serializable {
     private String adresse;
     private Double longitude;
     private Double latitude;
+    @Version
+    Integer version;
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
 
     @OneToMany
     private List<Produit> produits;

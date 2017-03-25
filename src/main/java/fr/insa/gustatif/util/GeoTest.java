@@ -22,8 +22,8 @@ import java.util.logging.Logger;
  * @author B3233 : Gestion des exceptions
  */
 public class GeoTest {
-
-    final static String GOOGLE_API_KEY = "AIzaSyAhf3JleYpal9S-xouJYH8lf7Dvz5Y2Nko";
+    // clé de l'insa : AIzaSyAhf3JleYpal9S-xouJYH8lf7Dvz5Y2Nko
+    final static String GOOGLE_API_KEY = "AIzaSyDTqRT4Ik2h3oohtkwskiViYbWDi4paf20";
 
     final static GeoApiContext GEOAPI_CONTEXT = new GeoApiContext().setApiKey(GOOGLE_API_KEY);
 

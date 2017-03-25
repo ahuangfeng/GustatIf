@@ -23,7 +23,15 @@ public abstract class Livreur implements Serializable {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     @Version
-    int version;
+    Integer version;
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
     private Integer capaciteMax;
     private Boolean disponible;
     private Double latitude;

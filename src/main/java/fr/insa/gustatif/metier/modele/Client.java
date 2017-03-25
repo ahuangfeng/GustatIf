@@ -14,6 +14,7 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
+import javax.persistence.Version;
 
 @Entity
 public class Client implements Serializable {
@@ -28,6 +29,16 @@ public class Client implements Serializable {
     private String adresse;
     private Double latitude;
     private Double longitude;
+    @Version
+    Integer version;
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
 
     @OneToMany
     List<Commande> commandes;

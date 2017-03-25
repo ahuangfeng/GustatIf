@@ -12,6 +12,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Temporal;
+import javax.persistence.Version;
 
 @Entity
 public class Commande implements Serializable {
@@ -28,6 +29,17 @@ public class Commande implements Serializable {
     private Date dateDeFin;
     private Double prix;
     private Double poids;
+    
+    @Version
+    Integer version;
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
 
     @OneToMany(cascade = javax.persistence.CascadeType.ALL)
     private List<ProduitCommande> produitsCommande;
