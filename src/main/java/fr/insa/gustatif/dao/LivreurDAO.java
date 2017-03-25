@@ -8,8 +8,6 @@ package fr.insa.gustatif.dao;
 import fr.insa.gustatif.metier.modele.Livreur;
 import java.util.List;
 import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceException;
 import javax.persistence.Query;
 
@@ -17,21 +15,22 @@ import javax.persistence.Query;
  *
  */
 public class LivreurDAO implements BasicDAO<Livreur> {
-    
-    public boolean modifierLivreur(Livreur livreur) throws PersistenceException{
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        if (exists(livreur.getId())) {
-            em.merge(livreur);
-            return true;
+
+    public List<Livreur> recupererCapablesDeLivrer(double poids) {
+        try {
+            EntityManager em = JpaUtil.obtenirEntityManager();
+            Query q = em.createQuery("SELECT l FROM Livreur l WHERE l.disponible = true and l.capaciteMax >= :poids");
+            q.setParameter("poids", poids);
+            return q.getResultList();
+        } catch (PersistenceException e) {
+            return null;
         }
-        return false;
     }
+
     
     public void terminerCommandeEnCours(Livreur livreur) {
         EntityManager em = JpaUtil.obtenirEntityManager();
         livreur.terminerCommandeEnCours();
         em.merge(livreur);
-        
-        // TODO: Mettre le livreur dans un état "terminé"
     }
 }

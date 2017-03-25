@@ -1,6 +1,6 @@
 package fr.insa.gustatif.vue;
 
-import fr.insa.gustatif.exceptions.BadLocationException;
+import com.google.maps.errors.NotFoundException;
 import fr.insa.gustatif.exceptions.DuplicateEmailException;
 import fr.insa.gustatif.metier.modele.Client;
 import fr.insa.gustatif.metier.modele.Commande;
@@ -71,6 +71,8 @@ public class SimulationAdmin {
     }
 
     private void cycliste_accueil() {
+        identiteGestionnaire = null;
+
         int choix = -1;
         while (choix != 4) {
             System.out.println("Interface d'admin de Gustat'IF.");
@@ -165,6 +167,8 @@ public class SimulationAdmin {
     }
 
     private void gestionnaire_accueil() {
+        identiteCycliste = null;
+        
         int choix = -1;
         while (choix != 8) {
             System.out.println("Interface d'admin de Gustat'IF.");
@@ -252,13 +256,13 @@ public class SimulationAdmin {
                 } else {
                     voirCommandesCycliste(livreur);
                 }
+                break;
+            }
+            case 2: { // Toutes les commandes
                 System.out.println("Liste des commandes :");
                 for (Commande commande : serviceMetier.recupererCommandes()) {
                     System.out.println("  - " + commande);
                 }
-                break;
-            }
-            case 2: { // Toutes les commandes
                 break;
             }
         }
@@ -347,7 +351,7 @@ public class SimulationAdmin {
             serviceMetier.modifierClient(client, nom, prenom, email, adresse);
         } catch (NullPointerException e) {
             System.out.println("Echec de la saisie, la modification n'a pas eu lieu.");
-        } catch (BadLocationException ex) {
+        } catch (NotFoundException ex) {
             System.out.println("L'adresse n'est pas reconnue, la modification n'a pas eu lieu.");
         } catch (DuplicateEmailException ex) {
             System.out.println("Ce mail est déjà utilisé, la modification n'a pas eu lieu.");

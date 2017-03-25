@@ -8,6 +8,6 @@ package fr.insa.gustatif.exceptions;
 /**
  *  TODO : traiter execption
  */
-public class LivreurNotDisponibleException extends Exception{
+public class AucunLivreurDisponibleException extends Exception{
     
 }

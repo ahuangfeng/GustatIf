@@ -52,6 +52,11 @@ public class Cycliste extends Livreur implements Serializable {
     }
 
     @Override
+    public String getIdentifiant() {
+        return getMail();
+    }
+
+    @Override
     public String toString() {
         return "Cycliste{" + super.toString() + ", nom=" + nom + ", prenom=" + prenom + ", mail=" + mail + '}';
     }

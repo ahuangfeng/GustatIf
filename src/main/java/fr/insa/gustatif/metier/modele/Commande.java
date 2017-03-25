@@ -27,10 +27,11 @@ public class Commande implements Serializable {
     @Temporal(javax.persistence.TemporalType.DATE)
     private Date dateDeFin;
     private Double prix;
+    private Double poids;
 
     @OneToMany(cascade = javax.persistence.CascadeType.ALL)
     private List<ProduitCommande> produitsCommande;
-    
+
     @ManyToOne
     private Livreur livreur;
 
@@ -45,8 +46,10 @@ public class Commande implements Serializable {
         this.dateDeFin = heureDeFin;
         this.produitsCommande = new ArrayList<>(produits);
         this.prix = 0.;
+        this.poids = 0.;
         for (ProduitCommande produitCommande : this.produitsCommande) {
             this.prix += produitCommande.getProduit().getPrix() * produitCommande.getQuantity();
+            this.poids += produitCommande.getProduit().getPoids() * produitCommande.getQuantity();
         }
     }
 
@@ -77,13 +80,13 @@ public class Commande implements Serializable {
     public List<ProduitCommande> getProduits() {
         return produitsCommande;
     }
-    
-    public double getPoids(){
-        double poids = 0.;
-        for (ProduitCommande produitCommande : produitsCommande) {
-            poids+=produitCommande.getProduit().getPoids() * produitCommande.getQuantity();
-        }
-        return poids;
+
+    public double getPoids() {
+        return this.poids;
+    }
+
+    public Livreur getLivreur() {
+        return livreur;
     }
 
     public void setRestaurant(Restaurant restaurant) {
@@ -93,7 +96,7 @@ public class Commande implements Serializable {
     public void setClient(Client client) {
         this.client = client;
     }
-    
+
     public void setDateDeCommande(Date dateDeCommande) {
         this.dateDeCommande = dateDeCommande;
     }
@@ -101,26 +104,16 @@ public class Commande implements Serializable {
     public void setDateDeFin(Date dateDeFin) {
         this.dateDeFin = dateDeFin;
     }
-    
-    public Livreur getLivreur() {
-        return livreur;
-    }
 
     public void setLivreur(Livreur livreur) {
         this.livreur = livreur;
     }
-    
-    /**
-     * Le prix est calculé automatiquement dans le constructeur.
-     * @param prix 
-     */
-    public void setPrix(Double prix) {
-        this.prix = prix;
-    }
-    
+
     @Override
     public String toString() {
-        String r = "Commande #" + id + " de " + client.getMail() + ", " + prix + " €, effectuée à " + dateDeCommande + " et terminée à " + dateDeFin + " :";
+        String r = "Commande #" + id + " de " + client.getMail() + ", " + prix + " € et " + poids + " kg\n"
+                + "    livreur : " + livreur.getIdentifiant() + "\n"
+                + "    effectuée à " + dateDeCommande + " et terminée à " + dateDeFin + " :";
         for (ProduitCommande produitCommande : produitsCommande) {
             r += "\n";
             r += "    - " + produitCommande;

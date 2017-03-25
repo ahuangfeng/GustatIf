@@ -1,9 +1,5 @@
 package fr.insa.gustatif.metier.service;
 
-import com.google.maps.model.LatLng;
-import com.google.maps.model.TravelMode;
-import fr.insa.gustatif.exceptions.BadLocationException;
-import fr.insa.gustatif.util.GeoTest;
 import java.io.PrintStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,45 +43,5 @@ public class ServiceTechnique {
     public boolean verifierMail(String email) {
         Matcher matcher = VALID_EMAIL_ADDRESS_REGEX.matcher(email);
         return matcher.find();
-    }
-
-    public static LatLng getLatLng(String adresse) throws BadLocationException {
-        LatLng r = GeoTest.getLatLng(adresse);
-        if (null == r) {
-            throw new BadLocationException();
-        }
-        return r;
-    }
-
-    public static Double getTripDurationByBicycleInMinute(LatLng origin, LatLng destination, LatLng... steps) throws BadLocationException {
-        Double r = GeoTest.getTripDurationByBicycleInMinute(origin, destination, steps);
-        if (null == r) {
-            throw new BadLocationException();
-        }
-        return r;
-    }
-
-    public static Double getTripDistanceByCarInKm(LatLng origin, LatLng destination, LatLng... steps) throws BadLocationException {
-        Double r = GeoTest.getTripDistanceByCarInKm(origin, destination, steps);
-        if (null == r) {
-            throw new BadLocationException();
-        }
-        return r;
-    }
-
-    public static Double getTripDurationOrDistance(TravelMode mode, boolean duration, LatLng origin, LatLng destination, LatLng... steps) throws BadLocationException {
-        Double r = GeoTest.getTripDurationOrDistance(mode, duration, origin, destination, steps);
-        if (null == r) {
-            throw new BadLocationException();
-        }
-        return r;
-    }
-    
-    public static Double getFlightDistanceInKm(LatLng origin, LatLng destination) throws BadLocationException{
-        Double r = GeoTest.getFlightDistanceInKm(origin, destination);
-        if(null == r){
-            throw new BadLocationException();            
-        }
-        return r;
     }
 }

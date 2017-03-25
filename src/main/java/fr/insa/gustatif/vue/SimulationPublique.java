@@ -1,10 +1,11 @@
 package fr.insa.gustatif.vue;
 
-import fr.insa.gustatif.exceptions.BadLocationException;
+import com.google.maps.errors.NotFoundException;
+import com.google.maps.errors.OverDailyLimitException;
 import fr.insa.gustatif.exceptions.DuplicateEmailException;
 import fr.insa.gustatif.exceptions.IllegalCommandException;
 import fr.insa.gustatif.exceptions.IllegalUserInfoException;
-import fr.insa.gustatif.exceptions.LivreurNotDisponibleException;
+import fr.insa.gustatif.exceptions.AucunLivreurDisponibleException;
 import fr.insa.gustatif.metier.modele.Client;
 import fr.insa.gustatif.metier.modele.Commande;
 import fr.insa.gustatif.metier.modele.Produit;
@@ -197,7 +198,7 @@ public class SimulationPublique {
         } catch (IllegalUserInfoException ex) {
             cree = false;
             System.out.println(ex.getMessage());
-        } catch (BadLocationException ex) {
+        } catch (NotFoundException ex) {
             cree = false;
             System.out.println("Votre adresse n'est pas reconnue !");
         }
@@ -261,7 +262,7 @@ public class SimulationPublique {
                             System.out.println("Votre compte n'a pas pu être mis à jour, car cet email est déjà utilisé.");
                             afficherIdentite();
                             break;
-                        } catch (BadLocationException ex) {
+                        } catch (NotFoundException ex) {
                             System.out.println("Votre compte n'a pas pu être mis à jour, car votre adresse n'est pas reconnue.");
                             afficherIdentite();
                             break;
@@ -380,12 +381,8 @@ public class SimulationPublique {
                     case 1: { // Payer par carte bancaire
                         try {
                             Commande commande = serviceMetier.creerCommande(identite, listeProduits);
-                            
-                            serviceMetier.assignerLivreur(commande);
-                            System.out.println("Commande créée avec l'#ID " + commande.getId() + " :");
-                            System.out.println(commande);
-                            System.out.println("Commande livré par : "+commande.getLivreur().toString());
-                            
+                            System.out.println("Votre commande est validée, et est en cours de livraison !");
+                            System.out.println("C'est " + commande.getLivreur().getIdentifiant() + " qui vous l'amène !");
                             panier.clear();
                             throw new BackToHomeException();
                             
@@ -395,11 +392,12 @@ public class SimulationPublique {
                         } catch (IllegalCommandException ex) {
                             System.out.println("Impossible de créer la commande :");
                             System.out.println(ex.getMessage());
-                        } catch (LivreurNotDisponibleException ex) {
+                        } catch (AucunLivreurDisponibleException ex) {
                             //TODO : si il n'y a pas de livreur, on fait quoi? 
                             System.out.println("Pas de livreurs disponibles !");
-                            Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
-                        }
+                        } catch (OverDailyLimitException ex) {
+                            System.out.println("Quota Google Maps dépassé.");
+                    }
                     }
                     case 2: { // Retour
                         return;

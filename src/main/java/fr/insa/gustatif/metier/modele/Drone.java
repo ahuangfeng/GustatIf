@@ -37,6 +37,11 @@ public class Drone extends Livreur implements Serializable {
     }
 
     @Override
+    public String getIdentifiant() {
+        return getMatricule();
+    }
+    
+    @Override
     public String toString() {
         return "Drone{" + super.toString() + ", vitesse=" + vitesse + ", matricule=" + getMatricule() + '}';
     }

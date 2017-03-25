@@ -2,12 +2,8 @@ package fr.insa.gustatif.dao;
 
 import fr.insa.gustatif.exceptions.DuplicateEmailException;
 import fr.insa.gustatif.metier.modele.Gestionnaire;
-import java.util.List;
 import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceException;
-import javax.persistence.Query;
 
 /**
  *

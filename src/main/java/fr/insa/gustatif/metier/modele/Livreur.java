@@ -16,7 +16,7 @@ import javax.persistence.OneToMany;
  */
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
-public class Livreur implements Serializable {
+public abstract class Livreur implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -77,7 +77,6 @@ public class Livreur implements Serializable {
         this.capaciteMax = capaciteMax;
     }
     
-    
     public void setDisponible(Boolean disponible) {
         this.disponible = disponible;
     }
@@ -115,4 +114,5 @@ public class Livreur implements Serializable {
         return "Livreur{" + "id=" + id + ", capaciteMax=" + capaciteMax + ", disponible=" + disponible + ", latitude=" + latitude + ", longitude=" + longitude + '}';
     }
 
+    abstract public String getIdentifiant();
 }

@@ -1,7 +1,6 @@
 package fr.insa.gustatif.dao;
 
 import java.lang.reflect.ParameterizedType;
-import java.util.Arrays;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -14,6 +13,15 @@ public interface BasicDAO<T> {
     default public void creer(T instance) {
         EntityManager em = JpaUtil.obtenirEntityManager();
         em.persist(instance);
+    }
+
+    default public boolean modifier(T instance, long id) throws PersistenceException {
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        if (exists(id)) {
+            em.merge(instance);
+            return true;
+        }
+        return false;
     }
 
     default public T findById(long id) {

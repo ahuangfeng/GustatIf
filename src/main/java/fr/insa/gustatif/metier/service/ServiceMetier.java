@@ -1,5 +1,7 @@
 package fr.insa.gustatif.metier.service;
 
+import com.google.maps.errors.NotFoundException;
+import com.google.maps.errors.OverDailyLimitException;
 import com.google.maps.model.LatLng;
 import fr.insa.gustatif.dao.JpaUtil;
 import fr.insa.gustatif.dao.DroneDAO;
@@ -10,11 +12,10 @@ import fr.insa.gustatif.dao.GestionnaireDAO;
 import fr.insa.gustatif.dao.LivreurDAO;
 import fr.insa.gustatif.dao.ProduitDAO;
 import fr.insa.gustatif.dao.RestaurantDAO;
-import fr.insa.gustatif.exceptions.BadLocationException;
 import fr.insa.gustatif.exceptions.DuplicateEmailException;
 import fr.insa.gustatif.exceptions.IllegalCommandException;
 import fr.insa.gustatif.exceptions.IllegalUserInfoException;
-import fr.insa.gustatif.exceptions.LivreurNotDisponibleException;
+import fr.insa.gustatif.exceptions.AucunLivreurDisponibleException;
 import fr.insa.gustatif.metier.modele.Drone;
 import fr.insa.gustatif.metier.modele.Cycliste;
 import fr.insa.gustatif.metier.modele.Client;
@@ -24,6 +25,7 @@ import fr.insa.gustatif.metier.modele.Gestionnaire;
 import fr.insa.gustatif.metier.modele.Produit;
 import fr.insa.gustatif.metier.modele.ProduitCommande;
 import fr.insa.gustatif.metier.modele.Restaurant;
+import fr.insa.gustatif.util.GeoTest;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -50,9 +52,9 @@ public class ServiceMetier {
      * @return true si le client a été créé, sinon false (mail déjà utilisé)
      * @throws fr.insa.gustatif.exceptions.DuplicateEmailException
      * @throws fr.insa.gustatif.exceptions.IllegalUserInfoException
-     * @throws fr.insa.gustatif.exceptions.BadLocationException
+     * @throws com.google.maps.errors.NotFoundException
      */
-    public boolean inscrireClient(Client client) throws DuplicateEmailException, IllegalUserInfoException, BadLocationException {
+    public boolean inscrireClient(Client client) throws DuplicateEmailException, IllegalUserInfoException, NotFoundException {
         JpaUtil.creerEntityManager();
 
         final Runnable envoyerMailSucces = () -> {
@@ -79,7 +81,7 @@ public class ServiceMetier {
 
         try {
             // Récupère les coordonnées
-            LatLng coords = ServiceTechnique.getLatLng(client.getAdresse());
+            LatLng coords = GeoTest.getLatLng(client.getAdresse());
 
             // Persiste le client
             JpaUtil.ouvrirTransaction();
@@ -94,7 +96,7 @@ public class ServiceMetier {
         } catch (DuplicateEmailException | IllegalUserInfoException e) {
             JpaUtil.annulerTransaction();
             throw e;
-        } catch (BadLocationException e) {
+        } catch (NotFoundException e) {
             envoyerMailEchec.run();
             JpaUtil.annulerTransaction();
             throw e;
@@ -118,13 +120,13 @@ public class ServiceMetier {
      * @param adresse
      * @param email
      * @return
-     * @throws BadLocationException
+     * @throws com.google.maps.errors.NotFoundException
      * @throws fr.insa.gustatif.exceptions.DuplicateEmailException
      */
     public boolean modifierClient(Client client, String nom, String prenom, String email, String adresse)
-            throws DuplicateEmailException, BadLocationException {
+            throws DuplicateEmailException, NotFoundException {
         // Récupère les coordonnées
-        LatLng coords = ServiceTechnique.getLatLng(client.getAdresse());
+        LatLng coords = GeoTest.getLatLng(client.getAdresse());
 
         JpaUtil.creerEntityManager();
         JpaUtil.ouvrirTransaction();
@@ -272,7 +274,7 @@ public class ServiceMetier {
         JpaUtil.ouvrirTransaction();
         LivreurDAO livreurDAO = new LivreurDAO();
         try {
-            livreurDAO.modifierLivreur(livreur);
+            livreurDAO.modifier(livreur, livreur.getId());
             JpaUtil.validerTransaction();
             return true;
         } catch (Exception ex) {
@@ -327,8 +329,9 @@ public class ServiceMetier {
      * @param listeProduits
      * @return
      * @throws IllegalCommandException
+     * @throws AucunLivreurDisponibleException
      */
-    public Commande creerCommande(Client client, List<ProduitCommande> listeProduits) throws IllegalCommandException {
+    public Commande creerCommande(Client client, List<ProduitCommande> listeProduits) throws IllegalCommandException, AucunLivreurDisponibleException, OverDailyLimitException {
         // Vérifie la validité de la commande
         Restaurant resto = validerPanier(listeProduits);
         if (null == resto) {
@@ -340,76 +343,86 @@ public class ServiceMetier {
             JpaUtil.ouvrirTransaction();
 
             Commande commande = new Commande(client, new Date(), null, listeProduits, resto);
+            assignerLivreur(commande);
+
             CommandeDAO commandeDAO = new CommandeDAO();
             commandeDAO.creer(commande);
 
             ClientDAO clientDAO = new ClientDAO();
             clientDAO.ajouterCommande(client, commande);
 
-            // TODO: Assigner la commande à un livreur
             JpaUtil.validerTransaction();
             return commande;
         } finally {
             JpaUtil.fermerEntityManager();
         }
     }
-    
-    //TODO : qu'est-ce qui se passe si le livreur a des commandes en cours? on lui assigne aussi? et Difference entre getDisponible et 
-    public boolean assignerLivreur(Commande commande) throws LivreurNotDisponibleException{
-        JpaUtil.creerEntityManager();
-        JpaUtil.ouvrirTransaction();
-        
-        CommandeDAO commandeDAO = new CommandeDAO();
-        LivreurDAO livreurDAO = new LivreurDAO();
-        List<Livreur> livreursDispo = livreurDAO.findAll();
-        Livreur livreurAssigne = null;
-        double distance = 0.;
-        double temps;
-        double tempsMin = -1.;
-        for (Livreur livreur : livreursDispo) {
-            if(livreur.getDisponible() && livreur.getCapaciteMax()>commande.getPoids()){
-                try{
-                    if(livreur instanceof Drone){
-                        //du livreur au restaurant
-                        distance += ServiceTechnique.getFlightDistanceInKm(new LatLng(livreur.getLatitude(), livreur.getLongitude()),
-                                                                        new LatLng(commande.getRestaurant().getLatitude(), commande.getRestaurant().getLongitude()));
-                        //du restaurant au client
-                        distance += ServiceTechnique.getFlightDistanceInKm(new LatLng(commande.getRestaurant().getLatitude(), commande.getRestaurant().getLongitude()),
-                                                                        new LatLng(commande.getClient().getLatitude(), commande.getClient().getLongitude()));
 
-                        temps = distance * ((Drone) livreur).getVitesse();
-                    }else{
-                        //du livreur au client passant par restaurant
-                        temps = ServiceTechnique.getTripDurationByBicycleInMinute(new LatLng(livreur.getLatitude(), livreur.getLongitude()),
-                                new LatLng(commande.getClient().getLatitude(),commande.getClient().getLongitude()),
-                                new LatLng(commande.getRestaurant().getLatitude(), commande.getRestaurant().getLongitude()));
-                    }
-                } catch (BadLocationException ex){
-                    Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
-                    JpaUtil.annulerTransaction();
-                    return false;
+    /**
+     * TODO : qu'est-ce qui se passe si le livreur a des commandes en cours? on
+     * lui assigne aussi? et Difference entre getDisponible et
+     *
+     * @param commande
+     * @return
+     * @throws AucunLivreurDisponibleException
+     */
+    private boolean assignerLivreur(Commande commande) throws AucunLivreurDisponibleException, OverDailyLimitException {
+        try {
+            JpaUtil.creerEntityManager();
+            JpaUtil.ouvrirTransaction();
+
+            // Quelques raccourcis
+            LatLng coordsClient = new LatLng(commande.getClient().getLatitude(), commande.getClient().getLongitude());
+            LatLng coordsResto = new LatLng(commande.getRestaurant().getLatitude(), commande.getRestaurant().getLongitude());
+
+            // Cherche le meilleur livreur
+            LivreurDAO livreurDAO = new LivreurDAO();
+            List<Livreur> livreursDispo = livreurDAO.recupererCapablesDeLivrer(commande.getPoids());
+            Livreur meilleurLivreur = null;
+            double tempsMin = -1.;
+            for (Livreur livreur : livreursDispo) {
+                LatLng coordsLivreur = new LatLng(livreur.getLatitude(), livreur.getLongitude());
+
+                // Calcule le temps en fonction du type de livreur
+                double temps;
+                if (livreur instanceof Drone) {
+                    temps = ((Drone) livreur).getVitesse()
+                            // Du livreur au restaurant
+                            * (GeoTest.getFlightDistanceInKm(coordsLivreur, coordsResto)
+                            // puis du restaurant au client
+                            + GeoTest.getFlightDistanceInKm(coordsResto, coordsClient));
+                } else {
+                    // Du livreur au client, en passant par le restaurant
+                    temps = GeoTest.getTripDurationByBicycleInMinute(coordsLivreur, coordsClient, coordsResto);
                 }
-                if(tempsMin < 0 || tempsMin > temps){
+
+                // Garde le livreur s'il met le moins de temps
+                if (tempsMin < 0 || tempsMin > temps) {
                     tempsMin = temps;
-                    livreurAssigne = livreur;
+                    meilleurLivreur = livreur;
                 }
             }
-        }
-        //TODO : si le livreur est null marche pas!
-        if(livreurAssigne != null){
-            commande.setLivreur(livreurAssigne);
-            livreurAssigne.setCommandeEnCours(commande);
-            commandeDAO.modifierCommande(commande);
-            livreurDAO.modifierLivreur(livreurAssigne);
+
+            // S'il n'y a pas de livreur disponible, retourne une exception
+            if (null == meilleurLivreur) {
+                JpaUtil.annulerTransaction();
+                throw new AucunLivreurDisponibleException();
+            }
+
+            // Assigne le livreur à la commande
+            CommandeDAO commandeDAO = new CommandeDAO();
+            commande.setLivreur(meilleurLivreur);
+            commandeDAO.modifier(commande, commande.getId());
+
+            // Assigne la commande au livreur
+            meilleurLivreur.setCommandeEnCours(commande);
+            livreurDAO.modifier(meilleurLivreur, meilleurLivreur.getId());
+
+            // Tout s'est bien passé
             JpaUtil.validerTransaction();
             return true;
-        }else{
-            try {
-                JpaUtil.annulerTransaction();
-                throw new LivreurNotDisponibleException();
-            } finally {
-                JpaUtil.fermerEntityManager();
-            }
+        } finally {
+            JpaUtil.fermerEntityManager();
         }
     }
 
@@ -424,8 +437,10 @@ public class ServiceMetier {
         CommandeDAO commandeDAO = new CommandeDAO();
         try {
             return commandeDAO.findById(idCommande);
+
         } catch (Exception ex) {
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ServiceMetier.class
+                    .getName()).log(Level.SEVERE, null, ex);
             return null;
         } finally {
             JpaUtil.fermerEntityManager();
@@ -442,8 +457,10 @@ public class ServiceMetier {
         CommandeDAO commandeDAO = new CommandeDAO();
         try {
             return commandeDAO.findAll();
+
         } catch (Exception ex) {
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ServiceMetier.class
+                    .getName()).log(Level.SEVERE, null, ex);
         } finally {
             JpaUtil.fermerEntityManager();
         }
@@ -465,18 +482,16 @@ public class ServiceMetier {
         ProduitDAO produitDAO = new ProduitDAO();
         try {
             return produitDAO.findById(idProduit);
+
         } catch (Exception ex) {
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ServiceMetier.class
+                    .getName()).log(Level.SEVERE, null, ex);
         } finally {
             JpaUtil.fermerEntityManager();
         }
         return null;
     }
 
-    /**
-     * TODO: NE PAS FAIRE, SEUL PAIEMENT A LA COMMANDE TODO: PAS CETTE GESTION
-     * PRECISE DE L'ETAT: soit en cours de livraison, soit livrée
-     */
     /**
      * @param commande
      */
@@ -499,8 +514,10 @@ public class ServiceMetier {
         CyclisteDAO cyclisteDAO = new CyclisteDAO();
         try {
             return cyclisteDAO.findByEmail(email);
+
         } catch (PersistenceException ex) {
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ServiceMetier.class
+                    .getName()).log(Level.SEVERE, null, ex);
         } finally {
             JpaUtil.fermerEntityManager();
         }
@@ -512,8 +529,10 @@ public class ServiceMetier {
         GestionnaireDAO gestionnaireDAO = new GestionnaireDAO();
         try {
             return gestionnaireDAO.findByEmail(email);
+
         } catch (PersistenceException ex) {
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ServiceMetier.class
+                    .getName()).log(Level.SEVERE, null, ex);
         } finally {
             JpaUtil.fermerEntityManager();
         }
@@ -528,13 +547,20 @@ public class ServiceMetier {
             final int NB_CYCLISTES = 15;
             final int NB_DRONES = 10;
             final int NB_GESTIONNAIRES = 3;
+            final int CAPACITE_MOY_CYCLISTE = 4000;
+            final int CAPACITE_ECART_CYCLISTE = 500;
+            final int CAPACITE_MOY_DRONE = 1000;
+            final int CAPACITE_ECART_DRONE = 200;
+            final int VITESSE_MOY_DRONE = 10;
+            final int VITESSE_ECART_DRONE = 5;
 
             // Récupère les coordonnées du départ IF
             LatLng coordsIF;
             try {
-                coordsIF = ServiceTechnique.getLatLng("Département Informatique, INSA Lyon, Villeurbanne");
-            } catch (BadLocationException ex) {
-                Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+                coordsIF = GeoTest.getLatLng("Département Informatique, INSA Lyon, Villeurbanne");
+            } catch (NotFoundException ex) {
+                Logger.getLogger(ServiceMetier.class
+                        .getName()).log(Level.SEVERE, null, ex);
                 coordsIF = new LatLng(45.78126, 4.87221);
             }
 
@@ -550,7 +576,7 @@ public class ServiceMetier {
                 try {
                     String nom = ServiceTechnique.genererString(true);
                     String prenom = ServiceTechnique.genererString(true);
-                    Integer capaciteMax = 20 + (int) (Math.random() * 20);
+                    Integer capaciteMax = CAPACITE_MOY_CYCLISTE + (int) (Math.random() * CAPACITE_ECART_CYCLISTE);
                     Cycliste c = new Cycliste(nom, prenom, nom.toLowerCase() + "@gustatif.fr", capaciteMax, true, coordsIF.lat, coordsIF.lng);
                     cyclisteDAO.creerCycliste(c);
                     System.out.println("  - " + c);
@@ -563,8 +589,8 @@ public class ServiceMetier {
             System.out.println("Création des drônes :");
             DroneDAO droneDAO = new DroneDAO();
             for (int i = 0; i < NB_DRONES; ++i) {
-                Integer vitesse = 20 + (int) (Math.random() * 20);
-                Integer capaciteMax = 20 + (int) (Math.random() * 20);
+                Integer vitesse = VITESSE_MOY_DRONE + (int) (Math.random() * VITESSE_ECART_DRONE);
+                Integer capaciteMax = CAPACITE_MOY_DRONE + (int) (Math.random() * CAPACITE_ECART_DRONE);
                 Drone d = new Drone(vitesse, capaciteMax, true, coordsIF.lat, coordsIF.lng);
                 droneDAO.creer(d);
                 System.out.println("  - " + d);
