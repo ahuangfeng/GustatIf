@@ -14,6 +14,7 @@ import fr.insa.gustatif.exceptions.BadLocationException;
 import fr.insa.gustatif.exceptions.DuplicateEmailException;
 import fr.insa.gustatif.exceptions.IllegalCommandException;
 import fr.insa.gustatif.exceptions.IllegalUserInfoException;
+import fr.insa.gustatif.exceptions.LivreurNotDisponibleException;
 import fr.insa.gustatif.metier.modele.Drone;
 import fr.insa.gustatif.metier.modele.Cycliste;
 import fr.insa.gustatif.metier.modele.Client;
@@ -350,6 +351,65 @@ public class ServiceMetier {
             return commande;
         } finally {
             JpaUtil.fermerEntityManager();
+        }
+    }
+    
+    //TODO : qu'est-ce qui se passe si le livreur a des commandes en cours? on lui assigne aussi? et Difference entre getDisponible et 
+    public boolean assignerLivreur(Commande commande) throws LivreurNotDisponibleException{
+        JpaUtil.creerEntityManager();
+        JpaUtil.ouvrirTransaction();
+        
+        CommandeDAO commandeDAO = new CommandeDAO();
+        LivreurDAO livreurDAO = new LivreurDAO();
+        List<Livreur> livreursDispo = livreurDAO.findAll();
+        Livreur livreurAssigne = null;
+        double distance = 0.;
+        double temps;
+        double tempsMin = -1.;
+        for (Livreur livreur : livreursDispo) {
+            if(livreur.getDisponible() && livreur.getCapaciteMax()>commande.getPoids()){
+                try{
+                    if(livreur instanceof Drone){
+                        //du livreur au restaurant
+                        distance += ServiceTechnique.getFlightDistanceInKm(new LatLng(livreur.getLatitude(), livreur.getLongitude()),
+                                                                        new LatLng(commande.getRestaurant().getLatitude(), commande.getRestaurant().getLongitude()));
+                        //du restaurant au client
+                        distance += ServiceTechnique.getFlightDistanceInKm(new LatLng(commande.getRestaurant().getLatitude(), commande.getRestaurant().getLongitude()),
+                                                                        new LatLng(commande.getClient().getLatitude(), commande.getClient().getLongitude()));
+
+                        temps = distance * ((Drone) livreur).getVitesse();
+                    }else{
+                        //du livreur au client passant par restaurant
+                        temps = ServiceTechnique.getTripDurationByBicycleInMinute(new LatLng(livreur.getLatitude(), livreur.getLongitude()),
+                                new LatLng(commande.getClient().getLatitude(),commande.getClient().getLongitude()),
+                                new LatLng(commande.getRestaurant().getLatitude(), commande.getRestaurant().getLongitude()));
+                    }
+                } catch (BadLocationException ex){
+                    Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
+                    JpaUtil.annulerTransaction();
+                    return false;
+                }
+                if(tempsMin < 0 || tempsMin > temps){
+                    tempsMin = temps;
+                    livreurAssigne = livreur;
+                }
+            }
+        }
+        //TODO : si le livreur est null marche pas!
+        if(livreurAssigne != null){
+            commande.setLivreur(livreurAssigne);
+            livreurAssigne.setCommandeEnCours(commande);
+            commandeDAO.modifierCommande(commande);
+            livreurDAO.modifierLivreur(livreurAssigne);
+            JpaUtil.validerTransaction();
+            return true;
+        }else{
+            try {
+                JpaUtil.annulerTransaction();
+                throw new LivreurNotDisponibleException();
+            } finally {
+                JpaUtil.fermerEntityManager();
+            }
         }
     }
 

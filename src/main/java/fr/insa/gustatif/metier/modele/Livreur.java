@@ -76,7 +76,8 @@ public class Livreur implements Serializable {
     public void setCapaciteMax(Integer capaciteMax) {
         this.capaciteMax = capaciteMax;
     }
-
+    
+    
     public void setDisponible(Boolean disponible) {
         this.disponible = disponible;
     }
@@ -96,6 +97,7 @@ public class Livreur implements Serializable {
 
     public void setCommandeEnCours(Commande commandeEnCours) {
         this.commandeEnCours = commandeEnCours;
+        this.disponible = false;
     }
 
     public void ajouterCommandesLivree(Commande commandeLivree) {
@@ -105,6 +107,7 @@ public class Livreur implements Serializable {
     public void terminerCommandeEnCours() {
         this.commandesLivrees.add(commandeEnCours);
         this.commandeEnCours = null;
+        this.disponible = true;
     }
 
     @Override

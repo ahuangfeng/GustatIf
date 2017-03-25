@@ -4,6 +4,7 @@ import fr.insa.gustatif.exceptions.BadLocationException;
 import fr.insa.gustatif.exceptions.DuplicateEmailException;
 import fr.insa.gustatif.exceptions.IllegalCommandException;
 import fr.insa.gustatif.exceptions.IllegalUserInfoException;
+import fr.insa.gustatif.exceptions.LivreurNotDisponibleException;
 import fr.insa.gustatif.metier.modele.Client;
 import fr.insa.gustatif.metier.modele.Commande;
 import fr.insa.gustatif.metier.modele.Produit;
@@ -18,7 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.PersistenceException;
 
-/**
+/** TODO : si l'utilisateur se déconnecte, le panier se vide ou pas?
  *
  */
 public class SimulationPublique {
@@ -148,7 +149,7 @@ public class SimulationPublique {
                     }
                     if (!ajouterAuPanier(produit, quantite, restaurant.getId())) {
                         System.out.println("Impossible d'ajouter le produit :");
-                        System.out.println("Tous les produits d'une même commande doivent provenir d'un unique restaurant.");
+                        System.out.println("Tous les produits d'une même commande doivent provenir d'un unique restaurant. Restaurant actuel : #"+restaurant.getId());
                     }
                     System.out.println("Produit ajouté au panier.");
                     break;
@@ -379,11 +380,13 @@ public class SimulationPublique {
                     case 1: { // Payer par carte bancaire
                         try {
                             Commande commande = serviceMetier.creerCommande(identite, listeProduits);
-                            panier.clear();
-
+                            
+                            serviceMetier.assignerLivreur(commande);
                             System.out.println("Commande créée avec l'#ID " + commande.getId() + " :");
                             System.out.println(commande);
-
+                            System.out.println("Commande livré par : "+commande.getLivreur().toString());
+                            
+                            panier.clear();
                             throw new BackToHomeException();
                             
                         } catch (PersistenceException ex) {
@@ -392,6 +395,10 @@ public class SimulationPublique {
                         } catch (IllegalCommandException ex) {
                             System.out.println("Impossible de créer la commande :");
                             System.out.println(ex.getMessage());
+                        } catch (LivreurNotDisponibleException ex) {
+                            //TODO : si il n'y a pas de livreur, on fait quoi? 
+                            System.out.println("Pas de livreurs disponibles !");
+                            Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
                         }
                     }
                     case 2: { // Retour

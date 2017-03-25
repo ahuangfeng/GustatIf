@@ -77,6 +77,14 @@ public class Commande implements Serializable {
     public List<ProduitCommande> getProduits() {
         return produitsCommande;
     }
+    
+    public double getPoids(){
+        double poids = 0.;
+        for (ProduitCommande produitCommande : produitsCommande) {
+            poids+=produitCommande.getProduit().getPoids() * produitCommande.getQuantity();
+        }
+        return poids;
+    }
 
     public void setRestaurant(Restaurant restaurant) {
         this.restaurant = restaurant;
