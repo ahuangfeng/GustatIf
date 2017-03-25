@@ -3,7 +3,7 @@ package fr.insa.gustatif.vue;
 import com.google.maps.errors.NotFoundException;
 import com.google.maps.errors.OverDailyLimitException;
 import fr.insa.gustatif.exceptions.DuplicateEmailException;
-import fr.insa.gustatif.exceptions.IllegalCommandException;
+import fr.insa.gustatif.exceptions.CommandeMalFormeeException;
 import fr.insa.gustatif.exceptions.IllegalUserInfoException;
 import fr.insa.gustatif.exceptions.AucunLivreurDisponibleException;
 import fr.insa.gustatif.metier.modele.Client;
@@ -243,7 +243,7 @@ public class SimulationPublique {
                         String email = null;
                         while (true) {
                             email = Saisie.lireChaine("Adresse mail : ");
-                            if (null == serviceMetier.recupererClient(email)) {
+                            if (email.isEmpty() || null == serviceMetier.recupererClient(email)) {
                                 break;
                             } else {
                                 if (Saisie.choixMenu("Ce mail est déjà utilisé, que voulez-vous faire ?", new String[]{
@@ -389,7 +389,7 @@ public class SimulationPublique {
                         } catch (PersistenceException ex) {
                             System.out.println("Erreur critique lors de la création de la commande.");
                             Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
-                        } catch (IllegalCommandException ex) {
+                        } catch (CommandeMalFormeeException ex) {
                             System.out.println("Impossible de créer la commande :");
                             System.out.println(ex.getMessage());
                         } catch (AucunLivreurDisponibleException ex) {

@@ -20,15 +20,14 @@ public class JpaUtil {
     // *************************************************************************************
     /**
      * Nom de l'unité de persistance utilisée par la Factory de Entity Manager.
-     * <br><strong>Vérifier le nom de l'unité de persistance
-     * (cf. persistence.xml)</strong>
+     * <br><strong>Vérifier le nom de l'unité de persistance (cf.
+     * persistence.xml)</strong>
      */
     public static final String PERSISTENCE_UNIT_NAME = "persistence";
     /**
      * Factory de Entity Manager liée à l'unité de persistance.
      * <br/><strong>Vérifier le nom de l'unité de persistance indiquée dans
-     * l'attribut statique PERSISTENCE_UNIT_NAME
-     * (cf persistence.xml)</strong>
+     * l'attribut statique PERSISTENCE_UNIT_NAME (cf persistence.xml)</strong>
      */
     private static EntityManagerFactory entityManagerFactory = null;
     /**
@@ -150,7 +149,7 @@ public class JpaUtil {
      */
     public static void annulerTransaction() {
         try {
-            log("Annulation de la transaction (rollback)");
+            //log("Annulation de la transaction (rollback)");
 
             EntityManager em = threadLocalEntityManager.get();
             if (em.getTransaction().isActive()) {

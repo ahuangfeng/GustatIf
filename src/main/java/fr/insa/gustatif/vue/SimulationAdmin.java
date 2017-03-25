@@ -168,19 +168,18 @@ public class SimulationAdmin {
 
     private void gestionnaire_accueil() {
         identiteCycliste = null;
-        
+
         int choix = -1;
-        while (choix != 8) {
+        while (choix != 7) {
             System.out.println("Interface d'admin de Gustat'IF.");
             afficherIdentite();
             choix = Saisie.choixMenu("Que voulez-vous faire ?", new String[]{
                 "Connexion / Déconnexion",
                 "Visualiser les commandes",
+                "Lister les livreurs",
                 "Valider une commande en cours de livraison par un drône",
                 "Lister les clients",
                 "Modifier les données d'un client",
-                "Lister les livreurs",
-                "Modifier les infos d'un livreur",
                 "Quitter"
             });
             switch (choix) {
@@ -197,24 +196,20 @@ public class SimulationAdmin {
                     gestionnaire_visualiserCommandes();
                     break;
                 }
-                case 3: { // Valider une commande en cours de livraison par un drône
-                    gestionnaire_validerCommande();
-                    break;
-                }
-                case 4: { // Lister les clients
-                    gestionnaire_listerClients();
-                    break;
-                }
-                case 5: { // Modifier les données d'un client
-                    gestionnaire_modifierClient();
-                    break;
-                }
-                case 6: { // Lister les livreurs
+                case 3: { // Lister les livreurs
                     gestionnaire_listerLivreurs();
                     break;
                 }
-                case 7: { // Modifier les infos d'un livreur
-                    gestionnaire_modifierInfosLivreur();
+                case 4: { // Valider une commande en cours de livraison par un drône
+                    gestionnaire_validerCommande();
+                    break;
+                }
+                case 5: { // Lister les clients
+                    gestionnaire_listerClients();
+                    break;
+                }
+                case 6: { // Modifier les données d'un client
+                    gestionnaire_modifierClient();
                     break;
                 }
             }
@@ -268,6 +263,47 @@ public class SimulationAdmin {
         }
     }
 
+    private void gestionnaire_listerLivreurs() {
+        if (null == identiteGestionnaire) {
+            System.out.println("Vous n'êtes pas connecté.");
+            return;
+        }
+
+        int choix = Saisie.choixMenu("Qui voulez-vous lister ?", new String[]{
+            "Uniquement les drônes",
+            "Uniquement les cyclistes",
+            "Tous les livreurs",
+            "Retour"
+        });
+        switch (choix) {
+            case 1: { // Uniquement les drônes
+                System.out.println("Liste des drônes :");
+                for (Livreur livreur : serviceMetier.recupererLivreurs()) {
+                    if (livreur instanceof Drone) {
+                        System.out.println("  - " + livreur);
+                    }
+                }
+                break;
+            }
+            case 2: { // Uniquement les cyclistes
+                System.out.println("Liste des cyclistes :");
+                for (Livreur livreur : serviceMetier.recupererLivreurs()) {
+                    if (livreur instanceof Cycliste) {
+                        System.out.println("  - " + livreur);
+                    }
+                }
+                break;
+            }
+            case 3: { // Tous les livreurs
+                System.out.println("Liste des livreurs :");
+                for (Livreur livreur : serviceMetier.recupererLivreurs()) {
+                    System.out.println("  - " + livreur);
+                }
+                break;
+            }
+        }
+    }
+
     private void gestionnaire_validerCommande() {
         if (null == identiteGestionnaire) {
             System.out.println("Vous n'êtes pas connecté.");
@@ -285,6 +321,7 @@ public class SimulationAdmin {
             System.out.println("  - " + commande);
         }
 
+        // TODO: ID de la commande ou du drône ? (ou matricule du drône)
         Integer idCommande = Saisie.lireInteger("Quel est l'#ID de la commande à valider : ");
         Commande commande = serviceMetier.recupererCommande(idCommande.longValue());
         if (null == commande) {
@@ -356,26 +393,5 @@ public class SimulationAdmin {
         } catch (DuplicateEmailException ex) {
             System.out.println("Ce mail est déjà utilisé, la modification n'a pas eu lieu.");
         }
-    }
-
-    private void gestionnaire_listerLivreurs() {
-        if (null == identiteGestionnaire) {
-            System.out.println("Vous n'êtes pas connecté.");
-            return;
-        }
-
-        System.out.println("Liste des livreurs :");
-        for (Livreur livreur : serviceMetier.recupererLivreurs()) {
-            System.out.println("  - " + livreur);
-        }
-    }
-
-    private void gestionnaire_modifierInfosLivreur() {
-        if (null == identiteGestionnaire) {
-            System.out.println("Vous n'êtes pas connecté.");
-            return;
-        }
-
-        System.out.println("Not supported yet.");
     }
 }

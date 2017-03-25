@@ -4,9 +4,9 @@ import com.google.maps.DirectionsApi;
 import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.GeocodingApi;
-import com.google.maps.OkHttpRequestHandler;
 import com.google.maps.errors.NotFoundException;
 import com.google.maps.errors.OverDailyLimitException;
+import com.google.maps.errors.ZeroResultsException;
 import com.google.maps.model.DirectionsLeg;
 import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.DirectionsRoute;
@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 /**
  *
  * @author DASI Team
- * @author B3233
+ * @author B3233 : Gestion des exceptions
  */
 public class GeoTest {
 
@@ -63,15 +63,15 @@ public class GeoTest {
         return Math.round(d * 1000.0) / 1000.0;
     }
 
-    public static Double getTripDurationByBicycleInMinute(LatLng origin, LatLng destination, LatLng... steps) throws OverDailyLimitException {
+    public static Double getTripDurationByBicycleInMinute(LatLng origin, LatLng destination, LatLng... steps) throws OverDailyLimitException, ZeroResultsException {
         return getTripDurationOrDistance(TravelMode.BICYCLING, true, origin, destination, steps);
     }
 
-    public static Double getTripDistanceByCarInKm(LatLng origin, LatLng destination, LatLng... steps) throws OverDailyLimitException {
+    public static Double getTripDistanceByCarInKm(LatLng origin, LatLng destination, LatLng... steps) throws OverDailyLimitException, ZeroResultsException {
         return getTripDurationOrDistance(TravelMode.DRIVING, false, origin, destination, steps);
     }
 
-    public static Double getTripDurationOrDistance(TravelMode mode, boolean duration, LatLng origin, LatLng destination, LatLng... steps) throws OverDailyLimitException {
+    public static Double getTripDurationOrDistance(TravelMode mode, boolean duration, LatLng origin, LatLng destination, LatLng... steps) throws OverDailyLimitException, ZeroResultsException {
         DirectionsApiRequest request = DirectionsApi.getDirections(GEOAPI_CONTEXT, origin.toString(), destination.toString());
         request.mode(mode);
         request.region("fr");
@@ -98,7 +98,7 @@ public class GeoTest {
                 cumulDuration += Math.ceil(leg.duration.inSeconds / 60.0);
             }
 
-        } catch (OverDailyLimitException ex) {
+        } catch (OverDailyLimitException | ZeroResultsException ex) {
             throw ex;
         } catch (Exception ex) {
             return null;

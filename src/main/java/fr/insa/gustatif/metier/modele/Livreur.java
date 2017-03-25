@@ -10,6 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.OneToMany;
+import javax.persistence.Version;
 
 /**
  *
@@ -21,6 +22,8 @@ public abstract class Livreur implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
+    @Version
+    int version;
     private Integer capaciteMax;
     private Boolean disponible;
     private Double latitude;

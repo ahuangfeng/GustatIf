@@ -111,9 +111,11 @@ public class Commande implements Serializable {
 
     @Override
     public String toString() {
-        String r = "Commande #" + id + " de " + client.getMail() + ", " + prix + " € et " + poids + " kg\n"
-                + "    livreur : " + livreur.getIdentifiant() + "\n"
-                + "    effectuée à " + dateDeCommande + " et terminée à " + dateDeFin + " :";
+        String r = "Commande #" + id + " de " + client.getMail() + ", " + prix + " € et " + poids + " kg"
+                + "\n    effectuée à " + dateDeCommande + " et terminée à " + dateDeFin + " :";
+        if (null != livreur) {
+            r += "\n    livreur : " + livreur.getIdentifiant();
+        }
         for (ProduitCommande produitCommande : produitsCommande) {
             r += "\n";
             r += "    - " + produitCommande;
