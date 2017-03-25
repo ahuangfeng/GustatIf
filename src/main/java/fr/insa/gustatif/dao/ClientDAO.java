@@ -2,17 +2,18 @@ package fr.insa.gustatif.dao;
 
 import fr.insa.gustatif.exceptions.DuplicateEmailException;
 import fr.insa.gustatif.exceptions.IllegalUserInfoException;
-import java.util.List;
 import javax.persistence.EntityManager;
-import javax.persistence.Query;
 import fr.insa.gustatif.metier.modele.Client;
 import fr.insa.gustatif.metier.modele.Commande;
-import javax.persistence.NoResultException;
-import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceException;
 
-public class ClientDAO {
+public class ClientDAO implements BasicDAO<Client>, EmailDAO<Client> {
 
+    @Override
+    public void creer(Client client) {
+        throw new UnsupportedOperationException("Utiliser la méthode creerClient() pour créer un client.");
+    }
+    
     /**
      * Crée un client en vérifiant que le mail est unique.
      *
@@ -75,48 +76,6 @@ public class ClientDAO {
         em.merge(client);
     }
 
-    public Client findById(long id) {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        return em.find(Client.class, id);
-    }
-
-    public Client findByEmail(String mail) throws PersistenceException {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        Query emailQuery = em.createQuery("select c from Client c where c.mail = :mail");
-        emailQuery.setParameter("mail", mail);
-        try {
-            return (Client) emailQuery.getSingleResult();
-        } catch (NoResultException e) {
-            return null;
-        }
-    }
-
-    public boolean existWithMail(String mail) throws PersistenceException {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        Query emailQuery = em.createQuery("select c from Client c where c.mail = :mail");
-        emailQuery.setParameter("mail", mail);
-        try {
-            emailQuery.getSingleResult();
-        } catch (NoResultException e) {
-            return false;
-        } catch (NonUniqueResultException e) {
-            return true;
-        }
-        return true;
-    }
-
-    public List<Client> findAll() throws PersistenceException {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        List<Client> clients = null;
-        try {
-            Query q = em.createQuery("SELECT c FROM Client c");
-            clients = (List<Client>) q.getResultList();
-        } catch (Exception e) {
-            throw e;
-        }
-        return clients;
-    }
-    
     public void ajouterCommande(Client client, Commande commande) {
         EntityManager em = JpaUtil.obtenirEntityManager();
         client.addCommande(commande);

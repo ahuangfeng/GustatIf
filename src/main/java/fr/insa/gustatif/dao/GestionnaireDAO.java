@@ -12,8 +12,13 @@ import javax.persistence.Query;
 /**
  *
  */
-public class GestionnaireDAO {
+public class GestionnaireDAO implements BasicDAO<Gestionnaire>, EmailDAO<Gestionnaire> {
     
+    @Override
+    public void creer(Gestionnaire gestionnaire) {
+        throw new UnsupportedOperationException("Utiliser la méthode creerGestionnaire() pour créer un gestionnaire.");
+    }
+
     public void creerGestionnaire(Gestionnaire gestionnaire) throws PersistenceException, DuplicateEmailException {
         // Vérifie l'unicité de l'email du gestionnaire
         if (existWithMail(gestionnaire.getMail())) {
@@ -22,41 +27,5 @@ public class GestionnaireDAO {
 
         EntityManager em = JpaUtil.obtenirEntityManager();
         em.persist(gestionnaire);
-    }
-
-    public Gestionnaire findById(long id) throws PersistenceException {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        return em.find(Gestionnaire.class, id);
-    }
-
-    public Gestionnaire findByEmail(String mail) throws PersistenceException {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        Query emailQuery = em.createQuery("select g from Gestionnaire g where g.mail = :mail");
-        emailQuery.setParameter("mail", mail);
-        try {
-            return (Gestionnaire) emailQuery.getSingleResult();
-        } catch (NoResultException e) {
-            return null;
-        }
-    }
-
-    public boolean existWithMail(String mail) throws PersistenceException {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        Query emailQuery = em.createQuery("select g from Gestionnaire g where g.mail = :mail");
-        emailQuery.setParameter("mail", mail);
-        try {
-            emailQuery.getSingleResult();
-        } catch (NoResultException e) {
-            return false;
-        } catch (NonUniqueResultException e) {
-            return true;
-        }
-        return true;
-    }
-
-    public List<Gestionnaire> findAll() throws PersistenceException {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        Query q = em.createQuery("SELECT g FROM Gestionnaire g");
-        return q.getResultList();
     }
 }

@@ -171,7 +171,7 @@ public class SimulationAdmin {
             afficherIdentite();
             choix = Saisie.choixMenu("Que voulez-vous faire ?", new String[]{
                 "Connexion / Déconnexion",
-                "Visualiser toutes les commandes",
+                "Visualiser les commandes",
                 "Valider une commande en cours de livraison par un drône",
                 "Lister les clients",
                 "Modifier les données d'un client",
@@ -246,6 +246,12 @@ public class SimulationAdmin {
         });
         switch (choix) {
             case 1: { // D'un livreur particulier
+                Livreur livreur = serviceMetier.recupererLivreur(Saisie.lireInteger("#ID du livreur : ").longValue());
+                if (null == livreur) {
+                    System.out.println("#ID invalide.");
+                } else {
+                    voirCommandesCycliste(livreur);
+                }
                 System.out.println("Liste des commandes :");
                 for (Commande commande : serviceMetier.recupererCommandes()) {
                     System.out.println("  - " + commande);
@@ -253,12 +259,6 @@ public class SimulationAdmin {
                 break;
             }
             case 2: { // Toutes les commandes
-                Livreur livreur = serviceMetier.recupererLivreur(Saisie.lireInteger("#ID du livreur : ").longValue());
-                if (null == livreur) {
-                    System.out.println("#ID invalide.");
-                } else {
-                    voirCommandesCycliste(livreur);
-                }
                 break;
             }
         }

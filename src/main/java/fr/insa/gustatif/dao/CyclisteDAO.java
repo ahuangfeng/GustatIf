@@ -12,7 +12,12 @@ import javax.persistence.Query;
 /**
  *
  */
-public class CyclisteDAO {
+public class CyclisteDAO implements BasicDAO<Cycliste>, EmailDAO<Cycliste> {
+
+    @Override
+    public void creer(Cycliste cycliste) {
+        throw new UnsupportedOperationException("Utiliser la méthode creerCycliste() pour créer un cycliste.");
+    }
 
     public void creerCycliste(Cycliste cycliste) throws PersistenceException, DuplicateEmailException {
         EntityManager em = JpaUtil.obtenirEntityManager();
@@ -23,41 +28,5 @@ public class CyclisteDAO {
         }
 
         em.persist(cycliste);
-    }
-
-    public Cycliste findById(long id) throws PersistenceException {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        return em.find(Cycliste.class, id);
-    }
-
-    public Cycliste findByEmail(String mail) throws PersistenceException {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        Query emailQuery = em.createQuery("select c from Cycliste c where c.mail = :mail");
-        emailQuery.setParameter("mail", mail);
-        try {
-            return (Cycliste) emailQuery.getSingleResult();
-        } catch (NoResultException e) {
-            return null;
-        }
-    }
-
-    public boolean existWithMail(String mail) throws PersistenceException {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        Query emailQuery = em.createQuery("select c from Cycliste c where c.mail = :mail");
-        emailQuery.setParameter("mail", mail);
-        try {
-            emailQuery.getSingleResult();
-        } catch (NoResultException e) {
-            return false;
-        } catch (NonUniqueResultException e) {
-            return true;
-        }
-        return true;
-    }
-
-    public List<Cycliste> findAll() throws PersistenceException {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        Query q = em.createQuery("SELECT c FROM Cycliste c");
-        return q.getResultList();
     }
 }

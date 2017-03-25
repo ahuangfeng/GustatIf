@@ -340,7 +340,7 @@ public class ServiceMetier {
 
             Commande commande = new Commande(client, new Date(), null, listeProduits, resto);
             CommandeDAO commandeDAO = new CommandeDAO();
-            commandeDAO.creerCommande(commande);
+            commandeDAO.creer(commande);
 
             ClientDAO clientDAO = new ClientDAO();
             clientDAO.ajouterCommande(client, commande);
@@ -506,7 +506,7 @@ public class ServiceMetier {
                 Integer vitesse = 20 + (int) (Math.random() * 20);
                 Integer capaciteMax = 20 + (int) (Math.random() * 20);
                 Drone d = new Drone(vitesse, capaciteMax, true, coordsIF.lat, coordsIF.lng);
-                droneDAO.creerDrone(d);
+                droneDAO.creer(d);
                 System.out.println("  - " + d);
             }
 
