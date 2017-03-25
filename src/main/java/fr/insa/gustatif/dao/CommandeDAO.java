@@ -43,12 +43,11 @@ public class CommandeDAO {
         }
     }
 
-    public boolean modifierCommande(long id, Commande commande) { // TODO commande ne sers a rien
+    public boolean modifierCommande(Commande commande) { // TODO commande en parametre ou id?
         EntityManager em = JpaUtil.obtenirEntityManager();
         try {
-            Commande cm = findById(id);
-            if (exists(id)) {
-                em.merge(cm);
+            if (exists(commande.getId())) {
+                em.merge(commande);
             }
             return true;
         } catch (Exception ex) {

@@ -2,9 +2,7 @@ package fr.insa.gustatif.metier.service;
 
 import com.google.maps.model.LatLng;
 import com.google.maps.model.TravelMode;
-import fr.insa.gustatif.dao.JpaUtil;
 import fr.insa.gustatif.exceptions.BadLocationException;
-import fr.insa.gustatif.metier.modele.ProduitCommande;
 import fr.insa.gustatif.util.GeoTest;
 import java.io.PrintStream;
 import java.util.regex.Matcher;
@@ -79,6 +77,14 @@ public class ServiceTechnique {
         Double r = GeoTest.getTripDurationOrDistance(mode, duration, origin, destination, steps);
         if (null == r) {
             throw new BadLocationException();
+        }
+        return r;
+    }
+    
+    public static Double getFlightDistanceInKm(LatLng origin, LatLng destination) throws BadLocationException{
+        Double r = GeoTest.getFlightDistanceInKm(origin, destination);
+        if(null == r){
+            throw new BadLocationException();            
         }
         return r;
     }
