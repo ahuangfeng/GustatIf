@@ -355,6 +355,7 @@ public class ServiceMetier {
             while (null == commande.getLivreur() && !livreurs.isEmpty()) {
                 for (Iterator<Map.Entry<Double, Livreur>> it = livreurs.entrySet().iterator(); it.hasNext();) {
                     Map.Entry<Double, Livreur> entry = it.next();
+                    Double tempsEstime = entry.getKey();
                     Livreur livreur = entry.getValue();
 
                     // Si le livreur est dispo, on le réserve
@@ -366,6 +367,7 @@ public class ServiceMetier {
                         // Persiste la commande
                         CommandeDAO commandeDAO = new CommandeDAO();
                         commande.setLivreur(livreur);
+                        commande.setTempsEstime(tempsEstime);
                         commandeDAO.creer(commande);
 
                         // Ajoute la commande au client

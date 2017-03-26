@@ -201,7 +201,7 @@ public class SimulationAdmin {
                     break;
                 }
                 case 4: { // Valider une commande en cours de livraison par un drône
-                    gestionnaire_validerCommande();
+                    gestionnaire_validerCommandeDrone();
                     break;
                 }
                 case 5: { // Lister les clients
@@ -304,7 +304,7 @@ public class SimulationAdmin {
         }
     }
 
-    private void gestionnaire_validerCommande() {
+    private void gestionnaire_validerCommandeDrone() {
         if (null == identiteGestionnaire) {
             System.out.println("Vous n'êtes pas connecté.");
             return;
@@ -326,7 +326,7 @@ public class SimulationAdmin {
         Commande commande = serviceMetier.recupererCommande(idCommande.longValue());
         if (null == commande) {
             System.out.println("Cet #ID est invalide.");
-        } else if (!(commande.getLivreur() instanceof Drone) || null != commande.getDateDeFin()) {
+        } else if ((null != commande.getLivreur() && !(commande.getLivreur() instanceof Drone)) || null != commande.getDateDeFin()) {
             System.out.println("Cet #ID n'est pas celui d'une commande livrée par drône à valider.");
         } else {
             if ("o".equals(Saisie.lireChaine("Valider la commande ? (o / n) "))) {

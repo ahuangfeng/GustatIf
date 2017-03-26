@@ -17,7 +17,7 @@ public class CommandeDAO implements BasicDAO<Commande> {
         List<Commande> lc = q.getResultList();
         for (Iterator<Commande> it = lc.iterator(); it.hasNext();) {
             Commande commande = it.next();
-            if (commande.getLivreur() instanceof Drone) {
+            if (null == commande.getLivreur() || !(commande.getLivreur() instanceof Drone)) {
                 it.remove();
             }
         }

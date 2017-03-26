@@ -115,12 +115,19 @@ public class Commande implements Serializable {
         this.livreur = livreur;
     }
 
+    public void setTempsEstime(Double tempsEstime) {
+        this.tempsEstime = tempsEstime;
+    }
+
     @Override
     public String toString() {
         String r = "Commande #" + id + " de " + client.getMail() + ", " + prix + " € et " + poids + " kg"
                 + "\n    effectuée à " + dateDeCommande + " et terminée à " + dateDeFin + " :";
         if (null != livreur) {
             r += "\n    livreur : " + livreur.getIdentifiant();
+        }
+        if (null != tempsEstime) {
+            r += "\n    temps de livraison estimé : " + tempsEstime;
         }
         for (ProduitCommande produitCommande : produitsCommande) {
             r += "\n";
