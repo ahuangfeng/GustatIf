@@ -1,5 +1,6 @@
 package fr.insa.gustatif.metier.modele;
 
+import fr.insa.gustatif.exceptions.CommandeMalFormeeException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -78,7 +79,7 @@ public abstract class Livreur implements Serializable {
     public void setCapaciteMax(Integer capaciteMax) {
         this.capaciteMax = capaciteMax;
     }
-    
+
     public void setDisponible(Boolean disponible) {
         this.disponible = disponible;
     }
@@ -106,6 +107,12 @@ public abstract class Livreur implements Serializable {
     }
 
     public void terminerCommandeEnCours() {
+        Client client = commandeEnCours.getClient();
+        if (null != client && null != client.getLatitude() && null != client.getLongitude()) {
+            this.latitude = client.getLatitude();
+            this.longitude = client.getLongitude();
+        }
+        
         this.commandesLivrees.add(commandeEnCours);
         this.commandeEnCours = null;
         this.disponible = true;
