@@ -7,30 +7,39 @@ import fr.insa.gustatif.metier.modele.Client;
 import fr.insa.gustatif.metier.modele.Commande;
 import javax.persistence.PersistenceException;
 
+/**
+ * DAO de Client
+ */
 public class ClientDAO implements BasicDAO<Client>, EmailDAO<Client> {
 
+    /**
+     * NE PAS UTILISER CETTE METHODE, UTILISER creerClient()
+     *
+     * @param client
+     */
     @Override
     public void creer(Client client) {
         throw new UnsupportedOperationException("Utiliser la méthode creerClient() pour créer un client.");
     }
-    
+
     /**
-     * NE PAS UTILISER CETTE METHODE, UTILISER LES ALTERNATIVES DE ClientDAO
+     * NE PAS UTILISER CETTE METHODE, UTILISER modifierClient()
+     *
      * @param client
-     * @param id
-     * @return 
      */
     @Override
     public boolean modifier(Client client, long id) {
         throw new UnsupportedOperationException("Utiliser la méthode modifierClient() pour modifier un client.");
     }
-    
+
     /**
      * Crée un client en vérifiant que le mail est unique.
      *
-     * @param client
-     * @throws fr.insa.gustatif.exceptions.DuplicateEmailException
-     * @throws fr.insa.gustatif.exceptions.IllegalUserInfoException
+     * @param client Le client à persister
+     * @throws DuplicateEmailException Si le mail est déjà utilisé.
+     * @throws IllegalUserInfoException Si les informations du livreur ne sont
+     * pas valides.
+     * @throws PersistenceException Si une exception de persistence intervient
      */
     public void creerClient(Client client) throws DuplicateEmailException, IllegalUserInfoException, PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
@@ -56,12 +65,16 @@ public class ClientDAO implements BasicDAO<Client>, EmailDAO<Client> {
 
     /**
      *
-     * @param client
-     * @param nom
-     * @param prenom
-     * @param email
-     * @param adresse
-     * @throws DuplicateEmailException
+     * Modifie les données d'un client. Pour ne pas modifier une valeur, laisser
+     * le champ à null. L'adresse est validée par l'API Google Maps.
+     *
+     * @param client Le client à mettre à jour
+     * @param nom Le nouveau nom, ou null
+     * @param prenom Le nouveau prénom, ou null
+     * @param email Le nouvel email, ou null
+     * @param adresse La nouvelle adresse, ou null
+     * @throws DuplicateEmailException Si le mail est déjà utilisé.
+     * @throws PersistenceException Si une exception de persistence intervient
      */
     public void modifierClient(Client client, String nom, String prenom, String email, String adresse) throws DuplicateEmailException, PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
@@ -87,7 +100,14 @@ public class ClientDAO implements BasicDAO<Client>, EmailDAO<Client> {
         em.merge(client);
     }
 
-    public void ajouterCommande(Client client, Commande commande) {
+    /**
+     * Ajoute une commande au client.
+     *
+     * @param client Le client à qui ajouter la commande.
+     * @param commande La commande à ajouter
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public void ajouterCommande(Client client, Commande commande) throws PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
         client.addCommande(commande);
         em.merge(client);

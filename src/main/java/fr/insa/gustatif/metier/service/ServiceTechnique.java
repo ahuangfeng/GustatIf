@@ -13,7 +13,7 @@ public class ServiceTechnique {
             = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
 
     void envoyerMail(String destinataire, String sujet, String corps) {
-        afficherSeparateur(System.out);
+        System.out.println("-----------------------------------------------------------------------");
 
         System.out.println("Expéditeur : gustatif@gustatif.com");
         System.out.println("Pour : " + destinataire);
@@ -21,11 +21,7 @@ public class ServiceTechnique {
         System.out.println("Corps :");
         System.out.println(corps);
 
-        afficherSeparateur(System.out);
-    }
-
-    void afficherSeparateur(PrintStream ps) {
-        ps.println("-----------------------------------------------------------------------");
+        System.out.println("-----------------------------------------------------------------------");
     }
 
     public static String genererString(boolean capitalized) {

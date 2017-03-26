@@ -22,7 +22,7 @@ public class Simulation {
         }
 
         int choix = -1;
-        while (choix != 4) {
+        while (choix != 5) {
             choix = Saisie.choixMenu("Quelle simulation voulez-vous lancer ?", new String[]{
                 "Simulation de l'IHM publique",
                 "Simulation de l'IHM d'admin",

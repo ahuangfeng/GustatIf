@@ -39,18 +39,23 @@ public class SimulationPublique {
     }
 
     public void run() {
-        accueil();
+        try {
+            accueil();
+        } catch (Exception ex) {
+            System.out.println("Une erreur non gérée est survenue.");
+            Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     private void accueil() {
         int choix = -1;
-        while (choix != 4) {
+        while (choix != 5) {
             System.out.println("Accueil de Gustat'IF.");
             afficherIdentite();
             choix = Saisie.choixMenu("Que voulez-vous faire ?", new String[]{
                 "Gestion compte / Connexion / Inscription",
-                // TODO: Gestion du panier
                 "Voir toutes mes commandes",
+                "Vider mon panier",
                 "Restaurants",
                 "Quitter"
             });
@@ -67,7 +72,12 @@ public class SimulationPublique {
                     }
                     break;
                 }
-                case 3: { // Restaurants
+                case 3: { // Vider mon panier
+                    viderPanier();
+                    System.out.println("Le panier a bien été vidé.");
+                    break;
+                }
+                case 4: { // Restaurants
                     try {
                         restaurants();
                     } catch (BackToHomeException e) {
@@ -81,18 +91,18 @@ public class SimulationPublique {
     private void restaurants() throws BackToHomeException {
         int choix = -1;
         while (choix != 2) {
-            afficherIdentite();
-            System.out.println("Liste des restaurants :");
-            List<Restaurant> restaurants;
             try {
-                restaurants = serviceMetier.recupererRestaurants();
+                afficherIdentite();
+                System.out.println("Liste des restaurants :");
+                List<Restaurant> restaurants = serviceMetier.recupererRestaurants();
                 restaurants.sort((Restaurant r1, Restaurant r2) -> r1.getDenomination().compareToIgnoreCase(r2.getDenomination()));
                 for (Restaurant restaurant : restaurants) {
                     System.out.println("  - " + restaurant);
                 }
-            } catch (Exception ex) {
-                System.out.println("Erreur lors de la récupération de la liste des restaurants.");
+            } catch (PersistenceException ex) {
+                System.out.println("Erreur de persistence lors de la récupération de la liste des restaurants.");
                 Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
+                return;
             }
 
             choix = Saisie.choixMenu("Que voulez-vous faire ?", new String[]{
@@ -101,15 +111,16 @@ public class SimulationPublique {
             });
             switch (choix) {
                 case 1: { // Produits et détails d'un restaurant
-                    Integer idRestaurant = Saisie.lireInteger("Rentrez l'#ID du restaurant : ");
-                    Restaurant resto = serviceMetier.recupererRestaurant(idRestaurant.longValue());
-                    if (resto == null) {
-                        System.out.println("L'#ID est invalide.");
-                        break;
-                    }
                     try {
+                        Integer idRestaurant = Saisie.lireInteger("Rentrez l'#ID du restaurant : ");
+                        Restaurant resto = serviceMetier.recupererRestaurant(idRestaurant.longValue());
+                        if (resto == null) {
+                            System.out.println("L'#ID est invalide.");
+                            break;
+                        }
                         details_restaurant(resto);
-                    } catch (Exception ex) {
+                    } catch (PersistenceException ex) {
+                        System.out.println("Erreur de persistence lors de la récupération du restaurant.");
                         Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
                     }
                     break;
@@ -119,6 +130,11 @@ public class SimulationPublique {
     }
 
     private void details_restaurant(Restaurant restaurant) throws BackToHomeException {
+        if (null == restaurant) {
+            System.out.println("Le restaurant est invalide.");
+            return;
+        }
+
         int choix = -1;
         while (choix != 3) {
             afficherIdentite();
@@ -137,30 +153,32 @@ public class SimulationPublique {
             });
             switch (choix) {
                 case 1: { // Ajouter un produit au panier
-                    Integer idProduit = Saisie.lireInteger("Rentrez l'#ID du produit : ");
-                    Integer quantite = Saisie.lireInteger("Rentrez la quantité : ");
-                    if (0 == quantite) {
-                        System.out.println("Produit non ajouté.");
-                        break;
+                    try {
+                        Integer idProduit = Saisie.lireInteger("Rentrez l'#ID du produit : ");
+                        Integer quantite = Saisie.lireInteger("Rentrez la quantité : ");
+                        if (0 == quantite) {
+                            System.out.println("Produit non ajouté.");
+                            break;
+                        }
+                        Produit produit = serviceMetier.recupererProduit(idProduit.longValue());
+                        if (null == produit) {
+                            System.out.println("L'#ID est invalide.");
+                            break;
+                        }
+                        if (!ajouterAuPanier(produit, quantite, restaurant.getId())) {
+                            System.out.println("Impossible d'ajouter le produit :");
+                            System.out.println("Tous les produits d'une même commande doivent provenir d'un unique restaurant. Restaurant actuel : #" + restaurant.getId());
+                        }
+                        System.out.println("Produit ajouté au panier.");
+                    } catch (PersistenceException ex) {
+                        System.out.println("Erreur de persistence lors de la récupération de la liste des produits.");
+                        Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                    Produit produit = serviceMetier.recupererProduit(idProduit.longValue());
-                    if (null == produit) {
-                        System.out.println("L'#ID est invalide.");
-                        break;
-                    }
-                    if (!ajouterAuPanier(produit, quantite, restaurant.getId())) {
-                        System.out.println("Impossible d'ajouter le produit :");
-                        System.out.println("Tous les produits d'une même commande doivent provenir d'un unique restaurant. Restaurant actuel : #"+restaurant.getId());
-                    }
-                    System.out.println("Produit ajouté au panier.");
                     break;
                 }
                 case 2: { // Passer a la commande
-                    try {
-                        passerALaCommande(panier);
-                    } catch (Exception ex) {
-                        Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+                    passerALaCommande(panier);
+                    break;
                 }
             }
         }
@@ -171,55 +189,55 @@ public class SimulationPublique {
             System.out.println("Vous êtes déjà connecté.");
             return;
         }
-        String nom = Saisie.lireChaine("Nom : ");
-        String prenom = Saisie.lireChaine("Prénom : ");
-        String email = null;
-        while (true) {
-            email = Saisie.lireChaine("Adresse mail : ");
-            if (serviceMetier.recupererClient(email) == null) {
-                break;
-            } else {
-                if (Saisie.choixMenu("Ce mail est déjà utilisé, que voulez-vous faire ?", new String[]{
-                    "Entrer un autre mail",
-                    "Annuler l'inscription"
-                }) == 2) { // Annuler l'inscription
-                    return;
-                }
-            }
-        }
-        String adresse = Saisie.lireChaine("Adresse de livraison : ");
-
-        boolean cree;
         try {
-            cree = serviceMetier.inscrireClient(new Client(nom, prenom, email, adresse));
-        } catch (DuplicateEmailException ex) {
-            cree = false;
-            System.out.println("Ce mail est déjà utilisé !");
-        } catch (IllegalUserInfoException ex) {
-            cree = false;
-            System.out.println(ex.getMessage());
-        } catch (NotFoundException ex) {
-            cree = false;
-            System.out.println("Votre adresse n'est pas reconnue !");
-        }
+            String nom = Saisie.lireChaine("Nom : ");
+            String prenom = Saisie.lireChaine("Prénom : ");
+            String email = Saisie.lireEmailAvecVerification(serviceMetier);
+            if (null == email) {
+                return;
+            }
+            String adresse = Saisie.lireChaine("Adresse de livraison : ");
 
-        if (cree) {
-            System.out.println("Votre compte a été créé, et un mail de confirmation vous a été envoyé.");
-            System.out.println("Vous pouvez maintenant vous connecter.");
-            System.out.println("(connexion non automatique pour permettre de tester la connexion, sans avoir à se déconnecter)");
-        } else {
-            System.out.println("Votre compte n'a pas pu être créé.");
+            boolean cree;
+            try {
+                cree = serviceMetier.inscrireClient(new Client(nom, prenom, email, adresse));
+            } catch (DuplicateEmailException ex) {
+                cree = false;
+                System.out.println("Ce mail est déjà utilisé !");
+            } catch (IllegalUserInfoException ex) {
+                cree = false;
+                System.out.println(ex.getMessage());
+            } catch (NotFoundException ex) {
+                cree = false;
+                System.out.println("Votre adresse n'est pas reconnue !");
+            }
+
+            if (cree) {
+                System.out.println("Votre compte a été créé, et un mail de confirmation vous a été envoyé.");
+                System.out.println("Vous pouvez maintenant vous connecter.");
+                System.out.println("(connexion non automatique pour permettre de tester la connexion, sans avoir à se déconnecter)");
+            } else {
+                System.out.println("Votre compte n'a pas pu être créé.");
+            }
+        } catch (PersistenceException ex) {
+            System.out.println("Erreur de persistence lors de l'inscription.");
+            Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
     private void connexion() {
-        System.out.println("Connexion :");
-        String email = Saisie.lireChaine("Email : ").toLowerCase();
-        identite = serviceMetier.recupererClient(email);
-        if (null == identite) {
-            System.out.println("La connexion a échoué.");
-        } else {
-            System.out.println("Vous êtes connecté !");
+        try {
+            System.out.println("Connexion :");
+            String email = Saisie.lireChaine("Email : ").toLowerCase();
+            identite = serviceMetier.recupererClient(email);
+            if (null == identite) {
+                System.out.println("La connexion a échoué.");
+            } else {
+                System.out.println("Vous êtes connecté !");
+            }
+        } catch (PersistenceException ex) {
+            System.out.println("Erreur de persistence lors de la récupération du client.");
+            Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -237,35 +255,30 @@ public class SimulationPublique {
                 });
                 switch (choix) {
                     case 1: { // Modifier mes informations
-                        System.out.println("Ne rentrez rien pour ne pas modifier un champ.");
-                        String nom = Saisie.lireChaine("Nom : ");
-                        String prenom = Saisie.lireChaine("Prénom : ");
-                        String email = null;
-                        while (true) {
-                            email = Saisie.lireChaine("Adresse mail : ");
-                            if (email.isEmpty() || null == serviceMetier.recupererClient(email)) {
-                                break;
-                            } else {
-                                if (Saisie.choixMenu("Ce mail est déjà utilisé, que voulez-vous faire ?", new String[]{
-                                    "Entrer un autre mail",
-                                    "Annuler la modification"
-                                }) == 2) { // Annuler l'inscription
-                                    return;
-                                }
-                            }
-                        }
-                        String adresse = Saisie.lireChaine("Adresse de livraison : ");
-
                         try {
-                            serviceMetier.modifierClient(identite, nom, prenom, email, adresse);
-                        } catch (DuplicateEmailException ex) {
-                            System.out.println("Votre compte n'a pas pu être mis à jour, car cet email est déjà utilisé.");
-                            afficherIdentite();
-                            break;
-                        } catch (NotFoundException ex) {
-                            System.out.println("Votre compte n'a pas pu être mis à jour, car votre adresse n'est pas reconnue.");
-                            afficherIdentite();
-                            break;
+                            System.out.println("Ne rentrez rien pour ne pas modifier un champ.");
+                            String nom = Saisie.lireChaine("Nom : ");
+                            String prenom = Saisie.lireChaine("Prénom : ");
+                            String email = Saisie.lireEmailAvecVerification(serviceMetier);
+                            if (null == email) {
+                                return;
+                            }
+                            String adresse = Saisie.lireChaine("Adresse de livraison : ");
+
+                            try {
+                                serviceMetier.modifierClient(identite, nom, prenom, email, adresse);
+                            } catch (DuplicateEmailException ex) {
+                                System.out.println("Votre compte n'a pas pu être mis à jour, car cet email est déjà utilisé.");
+                                afficherIdentite();
+                                break;
+                            } catch (NotFoundException ex) {
+                                System.out.println("Votre compte n'a pas pu être mis à jour, car votre adresse n'est pas reconnue.");
+                                afficherIdentite();
+                                break;
+                            }
+                        } catch (PersistenceException ex) {
+                            System.out.println("Erreur de persistence lors de la modification du client.");
+                            Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
                         }
                         System.out.println("Votre compte a bien été mis à jour.");
                         afficherIdentite();
@@ -313,19 +326,14 @@ public class SimulationPublique {
                     + identite.getPrenom() + " " + identite.getNom() + " <" + identite.getMail() + ">"
             );
         }
-        if (!this.panier.isEmpty()) {
+        if (!panier.isEmpty()) {
             System.out.println("Panier actuel : ");
-            for (ProduitCommande produitCommande : this.panier) {
+            for (ProduitCommande produitCommande : panier) {
                 System.out.println("  - " + produitCommande);
             }
         }
     }
 
-    /**
-     *
-     * @param produit
-     * @param quantite
-     */
     private boolean ajouterAuPanier(Produit produit, int quantite, Long idRestaurant) {
         if (panier.isEmpty()) {
             panierIdRestaurant = idRestaurant;
@@ -385,11 +393,8 @@ public class SimulationPublique {
                             System.out.println("C'est " + commande.getLivreur().getIdentifiant() + " qui vous l'amène !");
                             panier.clear();
                             throw new BackToHomeException();
-                            
-                        } catch (PersistenceException ex) {
-                            System.out.println("Erreur critique lors de la création de la commande.");
-                            Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
-                        } catch (CommandeMalFormeeException ex) {
+
+                        }  catch (CommandeMalFormeeException ex) {
                             System.out.println("Impossible de créer la commande :");
                             System.out.println(ex.getMessage());
                         } catch (AucunLivreurDisponibleException ex) {
@@ -397,7 +402,10 @@ public class SimulationPublique {
                             System.out.println("Pas de livreurs disponibles !");
                         } catch (OverDailyLimitException ex) {
                             System.out.println("Quota Google Maps dépassé.");
-                    }
+                        } catch (PersistenceException ex) {
+                            System.out.println("Erreur de persistence lors de la création de la commande.");
+                            Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
+                        }
                     }
                     case 2: { // Retour
                         return;
@@ -408,6 +416,11 @@ public class SimulationPublique {
     }
 
     void voirToutesMesCommandes() {
+        if (null == identite) {
+            System.out.println("Vous n'êtes pas connecté.");
+            return;
+        }
+        
         afficherIdentite();
         if (identite.getCommandes().isEmpty()) {
             System.out.println("Vous n'avez passé aucune commande.");

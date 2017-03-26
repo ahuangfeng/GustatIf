@@ -1,16 +1,19 @@
 package fr.insa.gustatif.util;
 
+import fr.insa.gustatif.metier.service.ServiceMetier;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.persistence.PersistenceException;
 
 /**
  *
  * @author DASI Team
- * @author B3233
+ * @author B3233 : choixMenu() et lireEmailAvecVerification()
  */
 public class Saisie {
 
@@ -55,7 +58,29 @@ public class Saisie {
         }
         return valeurLue;
     }
-    
+
+    public static String lireEmailAvecVerification(ServiceMetier serviceMetier) {
+        try {
+            while (true) {
+                String email = Saisie.lireChaine("Adresse mail : ");
+                if (null == serviceMetier.recupererClient(email)) {
+                    return email;
+                } else {
+                    if (Saisie.choixMenu("Ce mail est déjà utilisé, que voulez-vous faire ?", new String[]{
+                        "Entrer un autre mail",
+                        "Annuler la modification"
+                    }) == 2) { // Annuler l'inscription
+                        return null;
+                    }
+                }
+            }
+        } catch (PersistenceException ex) {
+            System.out.println("Erreur de persistence lors de la vérification de l'utilisation d'une adresse mail client.");
+            Logger.getLogger(Saisie.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+
     public static Integer choixMenu(String invite, String[] choix) {
         String generatedInvite = invite;
         ArrayList<Integer> vals = new ArrayList<>();
@@ -67,7 +92,7 @@ public class Saisie {
         generatedInvite += "\n";
         return lireInteger(generatedInvite, vals);
     }
-    
+
     public static void pause() {
         lireChaine("--PAUSE--");
     }

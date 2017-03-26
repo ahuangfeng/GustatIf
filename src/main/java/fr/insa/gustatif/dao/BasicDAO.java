@@ -10,14 +10,16 @@ import javax.persistence.Query;
 
 /**
  * Cette interface implémente toutes les méthodes d'un DAO basique.
+ *
  * @param <T> Classe métier
  */
 public interface BasicDAO<T> {
 
     /**
      * Persiste entity.
-     * 
-     * @param entity  L'entité à persister
+     *
+     * @param entity L'entité à persister
+     * @throws PersistenceException Si une exception de persistence intervient
      */
     default public void creer(T entity) throws PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
@@ -26,7 +28,7 @@ public interface BasicDAO<T> {
 
     /**
      * Merge l'entité.
-     * 
+     *
      * @param entity L'entité à merge
      * @param id L'ID de l'entité à merge
      * @return true si l'ID existe, sinon false
@@ -42,8 +44,9 @@ public interface BasicDAO<T> {
     }
 
     /**
-     * Rafraichit l'entité en la mettant à jour par rapport à la version dans la BDD.
-     * 
+     * Rafraichit l'entité en la mettant à jour par rapport à la version dans la
+     * BDD.
+     *
      * @param entity L'entité à rafraichir.
      * @throws PersistenceException Si une exception de persistence intervient
      */
@@ -62,12 +65,8 @@ public interface BasicDAO<T> {
     default public T findById(long id) throws PersistenceException {
         Class<?> templateClass = (Class<?>) ((ParameterizedType) getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0];
 
-        try {
-            EntityManager em = JpaUtil.obtenirEntityManager();
-            return (T) em.find(templateClass, id);
-        } catch (PersistenceException e) {
-            return null;
-        }
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        return (T) em.find(templateClass, id);
     }
 
     /**
@@ -81,13 +80,9 @@ public interface BasicDAO<T> {
         String[] templateFullName = templateName.split("\\.");
         templateName = templateFullName[templateFullName.length - 1];
 
-        try {
-            EntityManager em = JpaUtil.obtenirEntityManager();
-            Query q = em.createQuery("SELECT p FROM " + templateName + " p");
-            return q.getResultList();
-        } catch (PersistenceException e) {
-            return null;
-        }
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        Query q = em.createQuery("SELECT p FROM " + templateName + " p");
+        return q.getResultList();
     }
 
     /**
@@ -109,5 +104,14 @@ public interface BasicDAO<T> {
         } catch (NoResultException e) {
             return false;
         }
+    }
+
+    default public void supprimerToutesLesEntites() throws PersistenceException {
+        String templateName = ((ParameterizedType) getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0].getTypeName();
+        String[] templateFullName = templateName.split("\\.");
+        templateName = templateFullName[templateFullName.length - 1];
+
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        em.createQuery("DELETE FROM " + templateName + " p").executeUpdate();
     }
 }

@@ -12,11 +12,20 @@ import javax.persistence.PersistenceException;
 import javax.persistence.Query;
 
 /**
- *
+ * DAO de Livreur
  */
 public class LivreurDAO implements BasicDAO<Livreur> {
 
-    public List<Livreur> recupererCapablesDeLivrer(double poids) {
+    /**
+     * Renvoi la liste de tous les livreurs disponibles dont la capacité est
+     * supérieure à poids.
+     *
+     * @param poids Le poids de la commande que les livreurs doivent être
+     * capables de transporter.
+     * @return La liste des livreurs capablies de livrer.
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public List<Livreur> recupererCapablesDeLivrer(double poids) throws PersistenceException {
         try {
             EntityManager em = JpaUtil.obtenirEntityManager();
             Query q = em.createQuery("SELECT l FROM Livreur l WHERE l.disponible = true and l.capaciteMax >= :poids");
@@ -27,8 +36,12 @@ public class LivreurDAO implements BasicDAO<Livreur> {
         }
     }
 
-    
-    public void terminerCommandeEnCours(Livreur livreur) {
+    /**
+     * Termine la livraison en cours du livreur.
+     * @param livreur Le livreur à qui il faut terminer la livraison en cours.
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public void terminerCommandeEnCours(Livreur livreur) throws PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
         livreur.terminerCommandeEnCours();
         em.merge(livreur);

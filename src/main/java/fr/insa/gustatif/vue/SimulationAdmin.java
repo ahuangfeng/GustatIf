@@ -11,6 +11,9 @@ import fr.insa.gustatif.metier.modele.Livreur;
 import fr.insa.gustatif.metier.service.ServiceMetier;
 import fr.insa.gustatif.util.Saisie;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.persistence.PersistenceException;
 
 /**
  *
@@ -28,7 +31,12 @@ public class SimulationAdmin {
     }
 
     public void run() {
-        accueil();
+        try {
+            accueil();
+        } catch (Exception ex) {
+            System.out.println("Une erreur non gérée est survenue.");
+            Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     private void accueil() {
@@ -110,39 +118,49 @@ public class SimulationAdmin {
     }
 
     private void cycliste_connexion() {
-        if (null == identiteCycliste) {
-            System.out.println("Connexion cycliste :");
-            String email = Saisie.lireChaine("Email : ");
-            identiteCycliste = serviceMetier.recupererCycliste(email);
+        try {
             if (null == identiteCycliste) {
-                System.out.println("La connexion a échoué.");
+                System.out.println("Connexion cycliste :");
+                String email = Saisie.lireChaine("Email : ");
+                identiteCycliste = serviceMetier.recupererCycliste(email);
+                if (null == identiteCycliste) {
+                    System.out.println("La connexion a échoué.");
+                } else {
+                    System.out.println("Vous êtes connecté !");
+                }
             } else {
-                System.out.println("Vous êtes connecté !");
+                System.out.println("Vous êtes déjà connecté.");
             }
-        } else {
-            System.out.println("Vous êtes déjà connecté.");
+        } catch (PersistenceException ex) {
+            System.out.println("Erreur de persistence lors de la connexion du cycliste.");
+            Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
     private void cycliste_validerCommande() {
-        if (null == identiteCycliste) {
-            System.out.println("Vous devez être connecté.");
-        } else {
-            Commande enCours = identiteCycliste.getCommandeEnCours();
-            if (null == enCours) {
-                System.out.println("Vous n'avez pas de commande en cours.");
-                return;
-            }
-
-            System.out.println("Commande en cours : ");
-            System.out.println(enCours);
-
-            if ("o".equals(Saisie.lireChaine("Valider la commande ? (o / n) "))) {
-                serviceMetier.terminerCommande(enCours);
-                System.out.println("La commande a bien été marquée livrée.");
+        try {
+            if (null == identiteCycliste) {
+                System.out.println("Vous devez être connecté.");
             } else {
-                System.out.println("Action annulée.");
+                Commande enCours = identiteCycliste.getCommandeEnCours();
+                if (null == enCours) {
+                    System.out.println("Vous n'avez pas de commande en cours.");
+                    return;
+                }
+
+                System.out.println("Commande en cours : ");
+                System.out.println(enCours);
+
+                if ("o".equals(Saisie.lireChaine("Valider la commande ? (o / n) "))) {
+                    serviceMetier.terminerCommande(enCours);
+                    System.out.println("La commande a bien été marquée livrée.");
+                } else {
+                    System.out.println("Action annulée.");
+                }
             }
+        } catch (PersistenceException ex) {
+            System.out.println("Erreur de persistence lors de la validation de la commande.");
+            Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -217,17 +235,22 @@ public class SimulationAdmin {
     }
 
     private void gestionnaire_connexion() {
-        if (null == identiteGestionnaire) {
-            System.out.println("Connexion gestionnaire :");
-            String email = Saisie.lireChaine("Email : ");
-            identiteGestionnaire = serviceMetier.recupererGestionnaire(email);
+        try {
             if (null == identiteGestionnaire) {
-                System.out.println("La connexion a échoué.");
+                System.out.println("Connexion gestionnaire :");
+                String email = Saisie.lireChaine("Email : ");
+                identiteGestionnaire = serviceMetier.recupererGestionnaire(email);
+                if (null == identiteGestionnaire) {
+                    System.out.println("La connexion a échoué.");
+                } else {
+                    System.out.println("Vous êtes connecté !");
+                }
             } else {
-                System.out.println("Vous êtes connecté !");
+                System.out.println("Vous êtes déjà connecté.");
             }
-        } else {
-            System.out.println("Vous êtes déjà connecté.");
+        } catch (PersistenceException ex) {
+            System.out.println("Erreur de persistence lors de la connexion du gestionnaire.");
+            Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -236,30 +259,34 @@ public class SimulationAdmin {
             System.out.println("Vous n'êtes pas connecté.");
             return;
         }
-
-        afficherIdentite();
-        int choix = Saisie.choixMenu("Quelles commandes lister ?", new String[]{
-            "D'un livreur particulier",
-            "Toutes les commandes",
-            "Retour"
-        });
-        switch (choix) {
-            case 1: { // D'un livreur particulier
-                Livreur livreur = serviceMetier.recupererLivreur(Saisie.lireInteger("#ID du livreur : ").longValue());
-                if (null == livreur) {
-                    System.out.println("#ID invalide.");
-                } else {
-                    voirCommandesCycliste(livreur);
+        try {
+            afficherIdentite();
+            int choix = Saisie.choixMenu("Quelles commandes lister ?", new String[]{
+                "D'un livreur particulier",
+                "Toutes les commandes",
+                "Retour"
+            });
+            switch (choix) {
+                case 1: { // D'un livreur particulier
+                    Livreur livreur = serviceMetier.recupererLivreur(Saisie.lireInteger("#ID du livreur : ").longValue());
+                    if (null == livreur) {
+                        System.out.println("#ID invalide.");
+                    } else {
+                        voirCommandesCycliste(livreur);
+                    }
+                    break;
                 }
-                break;
-            }
-            case 2: { // Toutes les commandes
-                System.out.println("Liste des commandes :");
-                for (Commande commande : serviceMetier.recupererCommandes()) {
-                    System.out.println("  - " + commande);
+                case 2: { // Toutes les commandes
+                    System.out.println("Liste des commandes :");
+                    for (Commande commande : serviceMetier.recupererCommandes()) {
+                        System.out.println("  - " + commande);
+                    }
+                    break;
                 }
-                break;
             }
+        } catch (PersistenceException ex) {
+            System.out.println("Erreur de persistence lors de la visualisation des commandes.");
+            Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -268,39 +295,43 @@ public class SimulationAdmin {
             System.out.println("Vous n'êtes pas connecté.");
             return;
         }
-
-        int choix = Saisie.choixMenu("Qui voulez-vous lister ?", new String[]{
-            "Uniquement les drônes",
-            "Uniquement les cyclistes",
-            "Tous les livreurs",
-            "Retour"
-        });
-        switch (choix) {
-            case 1: { // Uniquement les drônes
-                System.out.println("Liste des drônes :");
-                for (Livreur livreur : serviceMetier.recupererLivreurs()) {
-                    if (livreur instanceof Drone) {
+        try {
+            int choix = Saisie.choixMenu("Qui voulez-vous lister ?", new String[]{
+                "Uniquement les drônes",
+                "Uniquement les cyclistes",
+                "Tous les livreurs",
+                "Retour"
+            });
+            switch (choix) {
+                case 1: { // Uniquement les drônes
+                    System.out.println("Liste des drônes :");
+                    for (Livreur livreur : serviceMetier.recupererLivreurs()) {
+                        if (livreur instanceof Drone) {
+                            System.out.println("  - " + livreur);
+                        }
+                    }
+                    break;
+                }
+                case 2: { // Uniquement les cyclistes
+                    System.out.println("Liste des cyclistes :");
+                    for (Livreur livreur : serviceMetier.recupererLivreurs()) {
+                        if (livreur instanceof Cycliste) {
+                            System.out.println("  - " + livreur);
+                        }
+                    }
+                    break;
+                }
+                case 3: { // Tous les livreurs
+                    System.out.println("Liste des livreurs :");
+                    for (Livreur livreur : serviceMetier.recupererLivreurs()) {
                         System.out.println("  - " + livreur);
                     }
+                    break;
                 }
-                break;
             }
-            case 2: { // Uniquement les cyclistes
-                System.out.println("Liste des cyclistes :");
-                for (Livreur livreur : serviceMetier.recupererLivreurs()) {
-                    if (livreur instanceof Cycliste) {
-                        System.out.println("  - " + livreur);
-                    }
-                }
-                break;
-            }
-            case 3: { // Tous les livreurs
-                System.out.println("Liste des livreurs :");
-                for (Livreur livreur : serviceMetier.recupererLivreurs()) {
-                    System.out.println("  - " + livreur);
-                }
-                break;
-            }
+        } catch (PersistenceException ex) {
+            System.out.println("Erreur de persistence lors de la récupération des livreurs.");
+            Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -309,32 +340,36 @@ public class SimulationAdmin {
             System.out.println("Vous n'êtes pas connecté.");
             return;
         }
-
-        List<Commande> lc = serviceMetier.recupererCommandesEnCoursParDrones();
-        if (lc.isEmpty()) {
-            System.out.println("Il n'y a aucune commande livrée par drône à valider.");
-            return;
-        }
-
-        System.out.println("Commandes en cours de livraison par des drônes :");
-        for (Commande commande : lc) {
-            System.out.println("  - " + commande);
-        }
-
-        // TODO: ID de la commande ou du drône ? (ou matricule du drône)
-        Integer idCommande = Saisie.lireInteger("Quel est l'#ID de la commande à valider : ");
-        Commande commande = serviceMetier.recupererCommande(idCommande.longValue());
-        if (null == commande) {
-            System.out.println("Cet #ID est invalide.");
-        } else if ((null != commande.getLivreur() && !(commande.getLivreur() instanceof Drone)) || null != commande.getDateDeFin()) {
-            System.out.println("Cet #ID n'est pas celui d'une commande livrée par drône à valider.");
-        } else {
-            if ("o".equals(Saisie.lireChaine("Valider la commande ? (o / n) "))) {
-                serviceMetier.terminerCommande(commande);
-                System.out.println("La commande a bien été marquée livrée.");
-            } else {
-                System.out.println("Action annulée.");
+        try {
+            List<Commande> lc = serviceMetier.recupererCommandesEnCoursParDrones();
+            if (lc.isEmpty()) {
+                System.out.println("Il n'y a aucune commande livrée par drône à valider.");
+                return;
             }
+
+            System.out.println("Commandes en cours de livraison par des drônes :");
+            for (Commande commande : lc) {
+                System.out.println("  - " + commande);
+            }
+
+            // TODO: ID de la commande ou du drône ? (ou matricule du drône)
+            Integer idCommande = Saisie.lireInteger("Quel est l'#ID de la commande à valider : ");
+            Commande commande = serviceMetier.recupererCommande(idCommande.longValue());
+            if (null == commande) {
+                System.out.println("Cet #ID est invalide.");
+            } else if ((null != commande.getLivreur() && !(commande.getLivreur() instanceof Drone)) || null != commande.getDateDeFin()) {
+                System.out.println("Cet #ID n'est pas celui d'une commande livrée par drône à valider.");
+            } else {
+                if ("o".equals(Saisie.lireChaine("Valider la commande ? (o / n) "))) {
+                    serviceMetier.terminerCommande(commande);
+                    System.out.println("La commande a bien été marquée livrée.");
+                } else {
+                    System.out.println("Action annulée.");
+                }
+            }
+        } catch (PersistenceException ex) {
+            System.out.println("Erreur de persistence lors de la validation de la commande.");
+            Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -344,9 +379,14 @@ public class SimulationAdmin {
             return;
         }
 
-        System.out.println("Liste des clients :");
-        for (Client client : serviceMetier.recupererClients()) {
-            System.out.println("  - " + client);
+        try {
+            System.out.println("Liste des clients :");
+            for (Client client : serviceMetier.recupererClients()) {
+                System.out.println("  - " + client);
+            }
+        } catch (PersistenceException ex) {
+            System.out.println("Erreur de persistence lors de la récupération des clients.");
+            Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -356,42 +396,37 @@ public class SimulationAdmin {
             return;
         }
 
-        Integer idClient = Saisie.lireInteger("Quel est l'#ID du client à modifier : ");
-        Client client = serviceMetier.recupererClient(idClient.longValue());
-        if (null == client) {
-            System.out.println("Cet #ID est invalide.");
-        }
-
-        System.out.println("Client à modifier : ");
-        System.out.println(client);
-
         try {
-            System.out.println("Laisser vide pour ne pas modifier.");
-            String nom = Saisie.lireChaine("Nom : ");
-            String prenom = Saisie.lireChaine("Prénom : ");
-            String email = null;
-            while (true) {
-                email = Saisie.lireChaine("Adresse mail : ");
-                if (null == serviceMetier.recupererClient(email)) {
-                    break;
-                } else {
-                    if (Saisie.choixMenu("Ce mail est déjà utilisé, que voulez-vous faire ?", new String[]{
-                        "Entrer un autre mail",
-                        "Annuler la modification"
-                    }) == 2) { // Annuler l'inscription
-                        return;
-                    }
-                }
+            Integer idClient = Saisie.lireInteger("Quel est l'#ID du client à modifier : ");
+            Client client = serviceMetier.recupererClient(idClient.longValue());
+            if (null == client) {
+                System.out.println("Cet #ID est invalide.");
             }
-            String adresse = Saisie.lireChaine("Adresse de livraison : ");
 
-            serviceMetier.modifierClient(client, nom, prenom, email, adresse);
-        } catch (NullPointerException e) {
-            System.out.println("Echec de la saisie, la modification n'a pas eu lieu.");
-        } catch (NotFoundException ex) {
-            System.out.println("L'adresse n'est pas reconnue, la modification n'a pas eu lieu.");
-        } catch (DuplicateEmailException ex) {
-            System.out.println("Ce mail est déjà utilisé, la modification n'a pas eu lieu.");
+            System.out.println("Client à modifier : ");
+            System.out.println(client);
+
+            try {
+                System.out.println("Laisser vide pour ne pas modifier.");
+                String nom = Saisie.lireChaine("Nom : ");
+                String prenom = Saisie.lireChaine("Prénom : ");
+                String email = Saisie.lireEmailAvecVerification(serviceMetier);
+                if (null == email) {
+                    return;
+                }
+                String adresse = Saisie.lireChaine("Adresse de livraison : ");
+
+                serviceMetier.modifierClient(client, nom, prenom, email, adresse);
+            } catch (NullPointerException e) {
+                System.out.println("Echec de la saisie, la modification n'a pas eu lieu.");
+            } catch (NotFoundException ex) {
+                System.out.println("L'adresse n'est pas reconnue, la modification n'a pas eu lieu.");
+            } catch (DuplicateEmailException ex) {
+                System.out.println("Ce mail est déjà utilisé, la modification n'a pas eu lieu.");
+            }
+        } catch (PersistenceException ex) {
+            System.out.println("Erreur de persistence lors de la modification du client.");
+            Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 }

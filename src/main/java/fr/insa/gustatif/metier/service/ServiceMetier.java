@@ -11,6 +11,7 @@ import fr.insa.gustatif.dao.CommandeDAO;
 import fr.insa.gustatif.dao.CyclisteDAO;
 import fr.insa.gustatif.dao.GestionnaireDAO;
 import fr.insa.gustatif.dao.LivreurDAO;
+import fr.insa.gustatif.dao.ProduitCommandeDAO;
 import fr.insa.gustatif.dao.ProduitDAO;
 import fr.insa.gustatif.dao.RestaurantDAO;
 import fr.insa.gustatif.exceptions.DuplicateEmailException;
@@ -36,6 +37,7 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.PersistenceException;
+import javax.persistence.Query;
 
 /**
  * Cette classe contient tous les services métiers de Gustat'IF
@@ -137,7 +139,7 @@ public class ServiceMetier {
 
             final int NB_CYCLISTES = 15;
             final int NB_DRONES = 10;
-            final int NB_GESTIONNAIRES = 3;
+            final int NB_GESTIONNAIRES = 2;
             final int CAPACITE_MOY_CYCLISTE = 4000;
             final int CAPACITE_ECART_CYCLISTE = 500;
             final int CAPACITE_MOY_DRONE = 1000;
@@ -150,8 +152,7 @@ public class ServiceMetier {
             try {
                 coordsIF = GeoTest.getLatLng("Département Informatique, INSA Lyon, Villeurbanne");
             } catch (NotFoundException ex) {
-                Logger.getLogger(ServiceMetier.class
-                        .getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
                 coordsIF = new LatLng(45.78126, 4.87221);
             }
 
@@ -410,7 +411,7 @@ public class ServiceMetier {
         try {
             JpaUtil.creerEntityManager();
             CommandeDAO commandeDAO = new CommandeDAO();
-            return commandeDAO.recupererCommandesEnCoursParDrones();
+            return commandeDAO.recupererCommandesEnCoursParDrone();
         } finally {
             JpaUtil.fermerEntityManager();
         }
@@ -420,7 +421,7 @@ public class ServiceMetier {
      * Récupère le cycliste ayant le mail donné en paramètre, ou null s'il
      * n'existe pas.
      *
-     * @param mail Le mail du cycliste à récupérer.
+     * @param email Le mail du cycliste à récupérer.
      * @return Le cycliste ayant le mail donné, ou null
      * @throws PersistenceException Si une exception de persistence intervient
      */
@@ -438,7 +439,7 @@ public class ServiceMetier {
      * Récupère le gestionnaire ayant le mail donné en paramètre, ou null s'il
      * n'existe pas.
      *
-     * @param mail Le mail du gestionnaire à récupérer.
+     * @param email Le mail du gestionnaire à récupérer.
      * @return Le gestionnaire ayant le mail donné, ou null
      * @throws PersistenceException Si une exception de persistence intervient
      */
@@ -599,7 +600,6 @@ public class ServiceMetier {
      * livraison.
      *
      * @param commande La commande à terminer.
-     * @throws CommandeMalFormeeException
      * @throws PersistenceException Si une exception de persistence intervient
      */
     public void terminerCommande(Commande commande) throws PersistenceException {
@@ -651,6 +651,55 @@ public class ServiceMetier {
                 }
             }
             return restaurantDAO.findById(idRestaurant);
+        } finally {
+            JpaUtil.fermerEntityManager();
+        }
+    }
+
+    /**
+     * Supprime toutes les entités de la base de donnée.
+     * @return true si la suppression a eu lieu, sinon false
+     */
+    public boolean viderLaBDD() {
+        try {
+            JpaUtil.creerEntityManager();
+            JpaUtil.ouvrirTransaction();
+
+            Logger l = Logger.getLogger(ServiceMetier.class.getName());
+            
+            new ProduitCommandeDAO().supprimerToutesLesEntites();
+            l.log(Level.INFO, "Tous les ProduitCommande ont été supprimés.");
+            
+            new CommandeDAO().supprimerToutesLesEntites();
+            l.log(Level.INFO, "Toutes les Commande ont été supprimées.");
+            
+            new CyclisteDAO().supprimerToutesLesEntites();
+            l.log(Level.INFO, "Tous les Cycliste ont été supprimés.");
+            
+            new DroneDAO().supprimerToutesLesEntites();
+            l.log(Level.INFO, "Tous les Drone ont été supprimés.");
+            
+            new LivreurDAO().supprimerToutesLesEntites();
+            l.log(Level.INFO, "Tous les Livreur ont été supprimés.");
+            
+            new ClientDAO().supprimerToutesLesEntites();
+            l.log(Level.INFO, "Tous les Client ont été supprimés.");
+            
+            new GestionnaireDAO().supprimerToutesLesEntites();
+            l.log(Level.INFO, "Tous les Gestionnaire ont été supprimés.");
+            
+            new RestaurantDAO().supprimerToutesLesEntites();
+            l.log(Level.INFO, "Tous les Restaurant ont été supprimés.");
+
+            new ProduitDAO().supprimerToutesLesEntites();
+            l.log(Level.INFO, "Tous les Produit ont été supprimés.");
+            
+            JpaUtil.validerTransaction();
+            return true;
+        } catch (PersistenceException ex) {
+            System.err.println("Une erreur est survenue lors du nettoyage de la BDD.");
+            JpaUtil.annulerTransaction();
+            return false;
         } finally {
             JpaUtil.fermerEntityManager();
         }
