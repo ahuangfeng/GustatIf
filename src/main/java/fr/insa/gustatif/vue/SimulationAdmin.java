@@ -263,6 +263,7 @@ public class SimulationAdmin {
             afficherIdentite();
             int choix = Saisie.choixMenu("Quelles commandes lister ?", new String[]{
                 "D'un livreur particulier",
+                "Les commandes en cours",
                 "Toutes les commandes",
                 "Retour"
             });
@@ -276,7 +277,14 @@ public class SimulationAdmin {
                     }
                     break;
                 }
-                case 2: { // Toutes les commandes
+                case 2: { // Les commandes en cours
+                    System.out.println("Liste des commandes :");
+                    for (Commande commande : serviceMetier.recupererCommandesFiltre(true, true, true)) {
+                        System.out.println("  - " + commande);
+                    }
+                    break;
+                }
+                case 3: { // Toutes les commandes
                     System.out.println("Liste des commandes :");
                     for (Commande commande : serviceMetier.recupererCommandes()) {
                         System.out.println("  - " + commande);

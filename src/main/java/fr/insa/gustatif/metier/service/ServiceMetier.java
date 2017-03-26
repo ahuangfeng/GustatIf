@@ -11,7 +11,6 @@ import fr.insa.gustatif.dao.CommandeDAO;
 import fr.insa.gustatif.dao.CyclisteDAO;
 import fr.insa.gustatif.dao.GestionnaireDAO;
 import fr.insa.gustatif.dao.LivreurDAO;
-import fr.insa.gustatif.dao.ProduitCommandeDAO;
 import fr.insa.gustatif.dao.ProduitDAO;
 import fr.insa.gustatif.dao.RestaurantDAO;
 import fr.insa.gustatif.exceptions.DuplicateEmailException;
@@ -28,9 +27,11 @@ import fr.insa.gustatif.metier.modele.Produit;
 import fr.insa.gustatif.metier.modele.ProduitCommande;
 import fr.insa.gustatif.metier.modele.Restaurant;
 import fr.insa.gustatif.util.GeoTest;
+import java.text.DateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -51,7 +52,8 @@ public class ServiceMetier {
 
     /**
      * Crée une commande à partir d'un panier. Assigne le livreur avec le
-     * meilleur temps de livraison estimé, et ajoute la commande au client.
+     * meilleur temps de livraison estimé, et ajoute la commande au client. Si
+     * la commande est livrée par un cycliste, celui en est informé par mail.
      *
      * @param client Le client passant cette commande.
      * @param listeProduits La liste des produits de la commande (le panier).
@@ -109,6 +111,49 @@ public class ServiceMetier {
                         livreurDAO.modifier(livreur, livreur.getId());
 
                         JpaUtil.validerTransaction();
+
+                        if (livreur instanceof Cycliste) {
+                            Cycliste c = (Cycliste) livreur;
+                            
+                            DateFormat df = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.SHORT, Locale.FRANCE);
+                            String dateCommande = df.format(commande.getDateDeCommande());
+                            
+                            String infosLivreur = c.getPrenom() + " " + c.getNom().toUpperCase() + " (#" + c.getId() + ", " + c.getIdentifiant() + ")";
+                            
+                            String corpsMail = "Bonjour " + c.getPrenom() + "," + "\n"
+                                    + "\n"
+                                    + "Merci d'effectuer cette livraison dès maintenant, en respectant le code de la route ;-)" + "\n"
+                                    + "\n"
+                                    + "Le Chef\n"
+                                    + "\n"
+                                    + "Détails de la livraison :" + "\n"
+                                    + "  - Date / heure : " + dateCommande + "\n"
+                                    + "  - Livreur : " + infosLivreur + "\n"
+                                    + "  - Restaurant : " + commande.getRestaurant().getDenomination() + "\n"
+                                    + "      -> " + commande.getRestaurant().getAdresse() + "\n"
+                                    + "  - Client : " + "\n"
+                                    + "      -> " + client.getPrenom() + " " + client.getNom().toUpperCase() + "\n"
+                                    + "      -> " + client.getAdresse() + "\n"
+                                    + "\n"
+                                    + "Commande :" + "\n";
+                            
+                            Double prixTotal = 0.;
+                            for (ProduitCommande produit : commande.getProduits()) {
+                                Integer q = produit.getQuantity();
+                                String d = produit.getProduit().getDenomination();
+                                Double p = produit.getProduit().getPrix();
+                                
+                                corpsMail += "  - " + q + " " + d + " : " + q + " x " + p + " € \n";
+                                
+                                prixTotal += p * q.doubleValue();
+                            }
+                            
+                            corpsMail += "\n" + "TOTAL : " + prixTotal + " €";
+                            
+                            String sujetMail = "Livraison n°" + commande.getId() + " à effectuer";
+                            serviceTechnique.envoyerMail(client.getMail(), sujetMail, corpsMail);
+                        }
+
                         return commande;
                     } else { // Si le livreur n'est pas dispo, on l'enlève
                         it.remove();
@@ -120,7 +165,6 @@ public class ServiceMetier {
             throw new AucunLivreurDisponibleException();
 
         } finally {
-            JpaUtil.annulerTransaction();
             JpaUtil.fermerEntityManager();
         }
     }
@@ -421,8 +465,8 @@ public class ServiceMetier {
 
             for (Iterator<Commande> it = resultat.iterator(); it.hasNext();) {
                 Commande commande = it.next();
-                if ((!inclureCyclistes && (null == commande.getLivreur() || !(commande.getLivreur() instanceof Cycliste)))
-                        || (!inclureDrones && (null == commande.getLivreur() || !(commande.getLivreur() instanceof Drone)))) {
+                if ((!inclureCyclistes && (null == commande.getLivreur() || (commande.getLivreur() instanceof Cycliste)))
+                        || (!inclureDrones && (null == commande.getLivreur() || (commande.getLivreur() instanceof Drone)))) {
                     it.remove();
                 }
             }
