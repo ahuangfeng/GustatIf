@@ -16,6 +16,7 @@ import fr.insa.gustatif.exceptions.DuplicateEmailException;
 import fr.insa.gustatif.exceptions.CommandeMalFormeeException;
 import fr.insa.gustatif.exceptions.IllegalUserInfoException;
 import fr.insa.gustatif.exceptions.AucunLivreurDisponibleException;
+import fr.insa.gustatif.exceptions.ServeurOccupeException;
 import fr.insa.gustatif.metier.modele.Drone;
 import fr.insa.gustatif.metier.modele.Cycliste;
 import fr.insa.gustatif.metier.modele.Client;
@@ -35,7 +36,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.persistence.OptimisticLockException;
 import javax.persistence.PersistenceException;
+import javax.persistence.RollbackException;
 
 /**
  * Cette classe contient tous les services métiers de Gustat'IF.
@@ -49,9 +52,10 @@ public class ServiceMetier {
     }
 
     /**
-     * Crée une commande à partir d'un panier. Assigne le livreur avec le
-     * meilleur temps de livraison estimé, et ajoute la commande au client. Si
-     * la commande est livrée par un cycliste, celui en est informé par mail.
+     * Crée une commande à partir d'un panier. Assigne le disponible livreur
+     * avec le meilleur temps de livraison estimé, et ajoute la commande au
+     * client. Si la commande est livrée par un cycliste, celui en est informé
+     * par mail.
      *
      * @param client Le client passant cette commande.
      * @param listeProduits La liste des produits de la commande (le panier).
@@ -62,8 +66,12 @@ public class ServiceMetier {
      * pour livrer la commande
      * @throws OverDailyLimitException Si le quota Google Maps est atteint
      * @throws PersistenceException Si une exception de persistence intervient
+     * @throws ServeurOccupeException Si le nombre de tentatives maximal est
+     * dépassé avant que le service ne réussisse à assigner un livreur à la
+     * commande.
      */
-    public Commande creerCommande(Client client, List<ProduitCommande> listeProduits) throws CommandeMalFormeeException, AucunLivreurDisponibleException, OverDailyLimitException, PersistenceException {
+    public Commande creerCommande(Client client, List<ProduitCommande> listeProduits)
+            throws CommandeMalFormeeException, AucunLivreurDisponibleException, OverDailyLimitException, PersistenceException, ServeurOccupeException {
         // Vérifie la validité de la commande
         Restaurant resto = validerPanier(listeProduits);
         if (null == resto) {
@@ -72,95 +80,109 @@ public class ServiceMetier {
 
         try {
             JpaUtil.creerEntityManager();
-            JpaUtil.ouvrirTransaction();
 
-            // Crée la commande
-            Commande commande = new Commande(client, new Date(), null, listeProduits, resto);
+            final int NB_ESSAIS = 10;
+            for (int essaisRestants = 10; essaisRestants > 0; --essaisRestants) {
+                // Crée la commande
+                Commande commande = new Commande(client, new Date(), null, listeProduits, resto);
 
-            // Récupère les livreurs disponibles
-            Map<Double, Livreur> livreurs = serviceTechnique.recupererLivreursParTemps(commande);
+                // Récupère les livreurs disponibles
+                Map<Double, Livreur> livreurs = serviceTechnique.recupererLivreursParTemps(commande);
 
-            // Essaie d'assigner un livreur
-            LivreurDAO livreurDAO = new LivreurDAO();
-            while (null == commande.getLivreur() && !livreurs.isEmpty()) {
-                for (Iterator<Map.Entry<Double, Livreur>> it = livreurs.entrySet().iterator(); it.hasNext();) {
-                    Map.Entry<Double, Livreur> entry = it.next();
-                    Double tempsEstime = entry.getKey();
-                    Livreur livreur = entry.getValue();
+                // Essaie d'assigner un livreur
+                LivreurDAO livreurDAO = new LivreurDAO();
+                while (null == commande.getLivreur() && !livreurs.isEmpty()) {
+                    for (Iterator<Map.Entry<Double, Livreur>> it = livreurs.entrySet().iterator(); it.hasNext();) {
+                        Map.Entry<Double, Livreur> entry = it.next();
+                        Double tempsEstime = entry.getKey();
+                        Livreur livreur = entry.getValue();
 
-                    // Si le livreur est dispo, on le réserve
-                    livreurDAO.rafraichir(livreur);
-                    if (livreur.getDisponible()) {
-                        livreur.setDisponible(false);
+                        // Si le livreur est dispo, on le réserve
+                        livreurDAO.rafraichir(livreur);
+                        if (livreur.getDisponible()) {
+                            JpaUtil.ouvrirTransaction();
 
-                        // C'est notre livreur
-                        // Persiste la commande
-                        CommandeDAO commandeDAO = new CommandeDAO();
-                        commande.setLivreur(livreur);
-                        commande.setTempsEstime(tempsEstime);
-                        commandeDAO.creer(commande);
+                            livreurDAO.setDisponible(livreur, false);
 
-                        // Ajoute la commande au client
-                        ClientDAO clientDAO = new ClientDAO();
-                        clientDAO.ajouterCommande(client, commande);
+                            // Persiste la commande
+                            CommandeDAO commandeDAO = new CommandeDAO();
+                            commande.setLivreur(livreur);
+                            commande.setTempsEstime(tempsEstime);
+                            commandeDAO.creer(commande);
 
-                        // Assigne la commande au livreur
-                        livreur.setCommandeEnCours(commande);
-                        livreurDAO.modifier(livreur, livreur.getId());
+                            // Ajoute la commande au client
+                            ClientDAO clientDAO = new ClientDAO();
+                            clientDAO.ajouterCommande(client, commande);
 
-                        JpaUtil.validerTransaction();
+                            // Assigne la commande au livreur
+                            livreur.setCommandeEnCours(commande);
+                            livreurDAO.modifier(livreur, livreur.getId());
 
-                        if (livreur instanceof Cycliste) {
-                            Cycliste c = (Cycliste) livreur;
-
-                            DateFormat df = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.SHORT, Locale.FRANCE);
-                            String dateCommande = df.format(commande.getDateDeCommande());
-
-                            String infosLivreur = c.getPrenom() + " " + c.getNom().toUpperCase() + " (#" + c.getId() + ", " + c.getIdentifiant() + ")";
-
-                            String corpsMail = "Bonjour " + c.getPrenom() + "," + "\n"
-                                    + "\n"
-                                    + "Merci d'effectuer cette livraison dès maintenant, en respectant le code de la route ;-)" + "\n"
-                                    + "\n"
-                                    + "Le Chef\n"
-                                    + "\n"
-                                    + "Détails de la livraison :" + "\n"
-                                    + "  - Date / heure : " + dateCommande + "\n"
-                                    + "  - Livreur : " + infosLivreur + "\n"
-                                    + "  - Restaurant : " + commande.getRestaurant().getDenomination() + "\n"
-                                    + "      -> " + commande.getRestaurant().getAdresse() + "\n"
-                                    + "  - Client : " + "\n"
-                                    + "      -> " + client.getPrenom() + " " + client.getNom().toUpperCase() + "\n"
-                                    + "      -> " + client.getAdresse() + "\n"
-                                    + "\n"
-                                    + "Commande :" + "\n";
-
-                            Double prixTotal = 0.;
-                            for (ProduitCommande produit : commande.getProduits()) {
-                                Integer q = produit.getQuantity();
-                                String d = produit.getProduit().getDenomination();
-                                Double p = produit.getProduit().getPrix();
-
-                                corpsMail += "  - " + q + " " + d + " : " + q + " x " + p + " € \n";
-
-                                prixTotal += p * q.doubleValue();
+                            try {
+                                JpaUtil.validerTransaction();
+                            } catch (OptimisticLockException | RollbackException ex) {
+                                JpaUtil.annulerTransaction();
+                                System.err.println("[ServiceMetier.creerCommande()] Erreur de concurrence, nouvelle tentative.");
+                                break;
                             }
 
-                            corpsMail += "\n" + "TOTAL : " + prixTotal + " €";
+                            if (livreur instanceof Cycliste) {
+                                Cycliste c = (Cycliste) livreur;
 
-                            String sujetMail = "Livraison n°" + commande.getId() + " à effectuer";
-                            serviceTechnique.envoyerMail(c.getMail(), sujetMail, corpsMail);
+                                DateFormat df = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.SHORT, Locale.FRANCE);
+                                String dateCommande = df.format(commande.getDateDeCommande());
+
+                                String infosLivreur = c.getPrenom() + " " + c.getNom().toUpperCase() + " (#" + c.getId() + ", " + c.getIdentifiant() + ")";
+
+                                String corpsMail = "Bonjour " + c.getPrenom() + "," + "\n"
+                                        + "\n"
+                                        + "Merci d'effectuer cette livraison dès maintenant, en respectant le code de la route ;-)" + "\n"
+                                        + "\n"
+                                        + "Le Chef\n"
+                                        + "\n"
+                                        + "Détails de la livraison :" + "\n"
+                                        + "  - Date / heure : " + dateCommande + "\n"
+                                        + "  - Livreur : " + infosLivreur + "\n"
+                                        + "  - Restaurant : " + commande.getRestaurant().getDenomination() + "\n"
+                                        + "      -> " + commande.getRestaurant().getAdresse() + "\n"
+                                        + "  - Client : " + "\n"
+                                        + "      -> " + client.getPrenom() + " " + client.getNom().toUpperCase() + "\n"
+                                        + "      -> " + client.getAdresse() + "\n"
+                                        + "\n"
+                                        + "Commande :" + "\n";
+
+                                Double prixTotal = 0.;
+                                for (ProduitCommande produit : commande.getProduits()) {
+                                    Integer q = produit.getQuantity();
+                                    String d = produit.getProduit().getDenomination();
+                                    Double p = produit.getProduit().getPrix();
+
+                                    corpsMail += "  - " + q + " " + d + " : " + q + " x " + p + " € \n";
+
+                                    prixTotal += p * q.doubleValue();
+                                }
+
+                                corpsMail += "\n" + "TOTAL : " + prixTotal + " €";
+
+                                String sujetMail = "Livraison n°" + commande.getId() + " à effectuer";
+                                serviceTechnique.envoyerMail(c.getMail(), sujetMail, corpsMail);
+                            }
+
+                            return commande;
+                        } else { // Si le livreur n'est pas dispo, on l'enlève
+                            it.remove();
                         }
-
-                        return commande;
-                    } else { // Si le livreur n'est pas dispo, on l'enlève
-                        it.remove();
                     }
+                }
+                
+                // S'il n'y a pas de livreur disponible
+                if (livreurs.isEmpty()) {
+                    throw new AucunLivreurDisponibleException();
                 }
             }
 
             // On a pas réussi à assigner un livreur
-            throw new AucunLivreurDisponibleException();
+            throw new ServeurOccupeException();
 
         } finally {
             JpaUtil.fermerEntityManager();
@@ -188,6 +210,7 @@ public class ServiceMetier {
             final int CAPACITE_ECART_DRONE = 200;
             final int VITESSE_MOY_DRONE = 10;
             final int VITESSE_ECART_DRONE = 5;
+            final double AMP_RAND_COORD = 0.;//TODO: 0.1;
 
             // Récupère les coordonnées du départ IF
             LatLng coordsIF;
@@ -203,7 +226,7 @@ public class ServiceMetier {
             CyclisteDAO cyclisteDAO = new CyclisteDAO();
             try {
                 cyclisteDAO.creerCycliste(new Cycliste("cyc", "liste", "cyc@gustatif.fr", 200, true,
-                        coordsIF.lat + Math.random() / 10., coordsIF.lng + Math.random() / 10.)
+                        coordsIF.lat + Math.random() * AMP_RAND_COORD, coordsIF.lng + Math.random() * AMP_RAND_COORD)
                 );
             } catch (DuplicateEmailException ex) {
                 // Le cycliste existe déjà
@@ -214,7 +237,7 @@ public class ServiceMetier {
                     String prenom = ServiceTechnique.genererString(true);
                     Integer capaciteMax = CAPACITE_MOY_CYCLISTE + (int) (Math.random() * CAPACITE_ECART_CYCLISTE);
                     Cycliste c = new Cycliste(nom, prenom, nom.toLowerCase() + "@gustatif.fr", capaciteMax, true,
-                            coordsIF.lat + Math.random() / 10., coordsIF.lng + Math.random() / 10.
+                            coordsIF.lat + Math.random() * AMP_RAND_COORD, coordsIF.lng + Math.random() * AMP_RAND_COORD
                     );
                     cyclisteDAO.creerCycliste(c);
                     System.out.println("  - " + c);
@@ -230,7 +253,7 @@ public class ServiceMetier {
                 Integer vitesse = VITESSE_MOY_DRONE + (int) (Math.random() * VITESSE_ECART_DRONE);
                 Integer capaciteMax = CAPACITE_MOY_DRONE + (int) (Math.random() * CAPACITE_ECART_DRONE);
                 Drone d = new Drone(vitesse, capaciteMax, true,
-                        coordsIF.lat + Math.random() / 10., coordsIF.lng + Math.random() / 10.
+                        coordsIF.lat + Math.random() * AMP_RAND_COORD, coordsIF.lng + Math.random() * AMP_RAND_COORD
                 );
                 droneDAO.creer(d);
                 System.out.println("  - " + d);

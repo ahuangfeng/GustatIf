@@ -48,11 +48,17 @@ public interface BasicDAO<T> {
      * BDD.
      *
      * @param entity L'entité à rafraichir.
+     * @return true si l'actualisation a réussi, sinon false
      * @throws PersistenceException Si une exception de persistence intervient
      */
-    default public void rafraichir(T entity) throws PersistenceException {
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        em.refresh(entity);
+    default public boolean rafraichir(T entity) throws PersistenceException {
+        try {
+            EntityManager em = JpaUtil.obtenirEntityManager();
+            em.refresh(entity);
+            return true;
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
     }
 
     /**

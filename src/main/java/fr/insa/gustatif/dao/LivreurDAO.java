@@ -38,6 +38,7 @@ public class LivreurDAO implements BasicDAO<Livreur> {
 
     /**
      * Termine la livraison en cours du livreur.
+     *
      * @param livreur Le livreur à qui il faut terminer la livraison en cours.
      * @throws PersistenceException Si une exception de persistence intervient
      */
@@ -45,5 +46,18 @@ public class LivreurDAO implements BasicDAO<Livreur> {
         EntityManager em = JpaUtil.obtenirEntityManager();
         livreur.terminerCommandeEnCours();
         em.merge(livreur);
+    }
+
+    /**
+     * Change l'attribut <i>disponible</i> du livreur, et flush immédiatement.
+     *
+     * @param livreur Le livreur à qui changer la disponibilité.
+     * @param bisponibilite La nouvelle disponibilité du livreur.
+     */
+    public void setDisponible(Livreur livreur, boolean bisponibilite) {
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        livreur.setDisponible(bisponibilite);
+        em.merge(livreur);
+        em.flush();
     }
 }
