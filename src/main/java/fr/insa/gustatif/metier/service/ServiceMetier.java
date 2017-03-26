@@ -80,7 +80,7 @@ public class ServiceMetier {
             Commande commande = new Commande(client, new Date(), null, listeProduits, resto);
 
             // Récupère les livreurs disponibles
-            Map<Double, Livreur> livreurs = recupererLivreursParTemps(commande);
+            Map<Double, Livreur> livreurs = serviceTechnique.recupererLivreursParTemps(commande);
 
             // Essaie d'assigner un livreur
             LivreurDAO livreurDAO = new LivreurDAO();
@@ -114,12 +114,12 @@ public class ServiceMetier {
 
                         if (livreur instanceof Cycliste) {
                             Cycliste c = (Cycliste) livreur;
-                            
+
                             DateFormat df = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.SHORT, Locale.FRANCE);
                             String dateCommande = df.format(commande.getDateDeCommande());
-                            
+
                             String infosLivreur = c.getPrenom() + " " + c.getNom().toUpperCase() + " (#" + c.getId() + ", " + c.getIdentifiant() + ")";
-                            
+
                             String corpsMail = "Bonjour " + c.getPrenom() + "," + "\n"
                                     + "\n"
                                     + "Merci d'effectuer cette livraison dès maintenant, en respectant le code de la route ;-)" + "\n"
@@ -136,20 +136,20 @@ public class ServiceMetier {
                                     + "      -> " + client.getAdresse() + "\n"
                                     + "\n"
                                     + "Commande :" + "\n";
-                            
+
                             Double prixTotal = 0.;
                             for (ProduitCommande produit : commande.getProduits()) {
                                 Integer q = produit.getQuantity();
                                 String d = produit.getProduit().getDenomination();
                                 Double p = produit.getProduit().getPrix();
-                                
+
                                 corpsMail += "  - " + q + " " + d + " : " + q + " x " + p + " € \n";
-                                
+
                                 prixTotal += p * q.doubleValue();
                             }
-                            
+
                             corpsMail += "\n" + "TOTAL : " + prixTotal + " €";
-                            
+
                             String sujetMail = "Livraison n°" + commande.getId() + " à effectuer";
                             serviceTechnique.envoyerMail(client.getMail(), sujetMail, corpsMail);
                         }
@@ -171,7 +171,8 @@ public class ServiceMetier {
 
     /**
      * Génère des cyclistes, drônes et gestionnaires aléatoirement, pour la
-     * simulation.
+     * simulation. Les comptes cyc@gustatif.fr (cycliste) et gege@gustatif.fr
+     * (gestionnaire) sont systématiquement créés.
      *
      * @throws PersistenceException Si une exception de persistence intervient
      */
@@ -203,7 +204,9 @@ public class ServiceMetier {
             System.out.println("Création des cyclistes :");
             CyclisteDAO cyclisteDAO = new CyclisteDAO();
             try {
-                cyclisteDAO.creerCycliste(new Cycliste("cyc", "liste", "cyc@gustatif.fr", 200, true, coordsIF.lat, coordsIF.lng));
+                cyclisteDAO.creerCycliste(new Cycliste("cyc", "liste", "cyc@gustatif.fr", 200, true,
+                        coordsIF.lat + Math.random() / 10., coordsIF.lng + Math.random() / 10.)
+                );
             } catch (DuplicateEmailException ex) {
                 // Le cycliste existe déjà
             }
@@ -212,7 +215,9 @@ public class ServiceMetier {
                     String nom = ServiceTechnique.genererString(true);
                     String prenom = ServiceTechnique.genererString(true);
                     Integer capaciteMax = CAPACITE_MOY_CYCLISTE + (int) (Math.random() * CAPACITE_ECART_CYCLISTE);
-                    Cycliste c = new Cycliste(nom, prenom, nom.toLowerCase() + "@gustatif.fr", capaciteMax, true, coordsIF.lat, coordsIF.lng);
+                    Cycliste c = new Cycliste(nom, prenom, nom.toLowerCase() + "@gustatif.fr", capaciteMax, true,
+                            coordsIF.lat + Math.random() / 10., coordsIF.lng + Math.random() / 10.
+                    );
                     cyclisteDAO.creerCycliste(c);
                     System.out.println("  - " + c);
                 } catch (DuplicateEmailException ex) {
@@ -226,7 +231,9 @@ public class ServiceMetier {
             for (int i = 0; i < NB_DRONES; ++i) {
                 Integer vitesse = VITESSE_MOY_DRONE + (int) (Math.random() * VITESSE_ECART_DRONE);
                 Integer capaciteMax = CAPACITE_MOY_DRONE + (int) (Math.random() * CAPACITE_ECART_DRONE);
-                Drone d = new Drone(vitesse, capaciteMax, true, coordsIF.lat, coordsIF.lng);
+                Drone d = new Drone(vitesse, capaciteMax, true,
+                        coordsIF.lat + Math.random() / 10., coordsIF.lng + Math.random() / 10.
+                );
                 droneDAO.creer(d);
                 System.out.println("  - " + d);
             }
@@ -330,12 +337,11 @@ public class ServiceMetier {
      * @param prenom Le nouveau prénom, ou null
      * @param email Le nouvel email, ou null
      * @param adresse La nouvelle adresse, ou null
-     * @return true si le client a été modifié, sinon false
      * @throws DuplicateEmailException Si le mail est déjà utilisé.
      * @throws NotFoundException Si l'adresse n'est pas reconnue par Google Maps
      * @throws PersistenceException Si une exception de persistence intervient
      */
-    public boolean modifierClient(Client client, String nom, String prenom, String email, String adresse)
+    public void modifierClient(Client client, String nom, String prenom, String email, String adresse)
             throws DuplicateEmailException, NotFoundException, PersistenceException {
         // Récupère les coordonnées
         LatLng coords = GeoTest.getLatLng(client.getAdresse());
@@ -349,11 +355,6 @@ public class ServiceMetier {
             clientDAO.modifierClient(client, nom, prenom, email, adresse);
 
             JpaUtil.validerTransaction();
-            return true;
-        } catch (PersistenceException e) {
-            return false;
-        } catch (DuplicateEmailException ex) {
-            throw ex;
         } finally {
             JpaUtil.fermerEntityManager();
         }
@@ -444,7 +445,7 @@ public class ServiceMetier {
     }
 
     /**
-     * Récupère toutes les commandes en cours de livraison par des drônes.
+     * Récupère les commandes répondant aux filtres.
      *
      * @param uniquementEnCours si true, uniquement les commandes en cours de
      * livraison, sinon toutes les commandes
@@ -549,65 +550,6 @@ public class ServiceMetier {
     }
 
     /**
-     * Méthode privée.
-     *
-     * Retourne les livreurs disponibles avec le temps estimé pour la livraison.
-     * <br>
-     * <strong>Il faut absolument qu'un EntityManager soit créé pour appeler
-     * cette méthode.</strong>
-     *
-     * @param commande Commande à livrer.
-     * @return Une Map (tempsEstimé, Livreur)
-     * @throws CommandeMalFormeeException Si la commande n'a pas de client, ou
-     * si celui-ci n'a pas de coordonnées
-     * @throws OverDailyLimitException Si le quota Google Maps est atteint
-     * @throws PersistenceException Si une exception de persistence intervient
-     */
-    private Map<Double, Livreur> recupererLivreursParTemps(Commande commande) throws OverDailyLimitException, CommandeMalFormeeException, PersistenceException {
-        if (null == commande.getClient()) {
-            throw new CommandeMalFormeeException("Le client n'est pas défini.");
-        }
-        if (null == commande.getClient().getLatitude() || null == commande.getClient().getLongitude()) {
-            throw new CommandeMalFormeeException("Le client n'est pas géolocalisé.");
-        }
-
-        // Quelques raccourcis
-        LatLng coordsClient = new LatLng(commande.getClient().getLatitude(), commande.getClient().getLongitude());
-        LatLng coordsResto = new LatLng(commande.getRestaurant().getLatitude(), commande.getRestaurant().getLongitude());
-
-        // Tri les livreurs par temps pour livrer la commande
-        LivreurDAO livreurDAO = new LivreurDAO();
-        List<Livreur> livreursDispo = livreurDAO.recupererCapablesDeLivrer(commande.getPoids());
-        Map<Double, Livreur> livreursParTemps = new TreeMap<>();
-        for (Livreur livreur : livreursDispo) {
-            LatLng coordsLivreur = new LatLng(livreur.getLatitude(), livreur.getLongitude());
-
-            // Calcule le temps en fonction du type de livreur
-            double temps;
-            if (livreur instanceof Drone) {
-                temps = ((Drone) livreur).getVitesse()
-                        // Du livreur au restaurant
-                        * (GeoTest.getFlightDistanceInKm(coordsLivreur, coordsResto)
-                        // puis du restaurant au client
-                        + GeoTest.getFlightDistanceInKm(coordsResto, coordsClient));
-            } else {
-                try {
-                    // Du livreur au client, en passant par le restaurant
-                    temps = GeoTest.getTripDurationByBicycleInMinute(coordsLivreur, coordsClient, coordsResto);
-                } catch (ZeroResultsException ex) {
-                    Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, "Aucun chemin entre le livreur et le client.");
-                    continue;
-                }
-            }
-
-            // Ajoute le livreur dans la map
-            livreursParTemps.put(temps, livreur);
-        }
-
-        return livreursParTemps;
-    }
-
-    /**
      * Récupère le produit ayant l'ID id, ou null s'il n'existe pas.
      *
      * @param id L'ID du produit à récupérer
@@ -684,7 +626,8 @@ public class ServiceMetier {
 
     /**
      * Vérifie la validité d'une commande, c'est-à-dire si tous les produits
-     * proviennent du même restaurant.
+     * proviennent du même restaurant, et si la commande comporte au moins un
+     * produit.
      *
      * @param panier Le panier à valider
      * @return L'ID du restaurant qui vend ces produits
