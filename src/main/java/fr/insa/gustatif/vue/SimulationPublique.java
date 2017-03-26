@@ -6,6 +6,7 @@ import fr.insa.gustatif.exceptions.DuplicateEmailException;
 import fr.insa.gustatif.exceptions.CommandeMalFormeeException;
 import fr.insa.gustatif.exceptions.IllegalUserInfoException;
 import fr.insa.gustatif.exceptions.AucunLivreurDisponibleException;
+import fr.insa.gustatif.exceptions.ServeurOccupeException;
 import fr.insa.gustatif.metier.modele.Client;
 import fr.insa.gustatif.metier.modele.Commande;
 import fr.insa.gustatif.metier.modele.Produit;
@@ -394,7 +395,7 @@ public class SimulationPublique {
                             panier.clear();
                             throw new BackToHomeException();
 
-                        }  catch (CommandeMalFormeeException ex) {
+                        } catch (CommandeMalFormeeException ex) {
                             System.out.println("Impossible de créer la commande :");
                             System.out.println(ex.getMessage());
                         } catch (AucunLivreurDisponibleException ex) {
@@ -405,6 +406,9 @@ public class SimulationPublique {
                         } catch (PersistenceException ex) {
                             System.out.println("Erreur de persistence lors de la création de la commande.");
                             Logger.getLogger(SimulationPublique.class.getName()).log(Level.SEVERE, null, ex);
+                        } catch (ServeurOccupeException ex) {
+                            System.out.println("Impossible de commander, le serveur Gustat'IF est victime de son succès.");
+                            System.out.println("Veuillez réessayer dans quelques minutes :)");
                         }
                     }
                     case 2: { // Retour
@@ -420,7 +424,7 @@ public class SimulationPublique {
             System.out.println("Vous n'êtes pas connecté.");
             return;
         }
-        
+
         afficherIdentite();
         if (identite.getCommandes().isEmpty()) {
             System.out.println("Vous n'avez passé aucune commande.");

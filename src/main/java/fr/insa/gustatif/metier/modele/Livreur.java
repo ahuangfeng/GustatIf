@@ -12,6 +12,7 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import javax.persistence.Version;
 
 /**
  *
@@ -23,6 +24,8 @@ public abstract class Livreur implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
+    @Version
+    private Long version;
     private Integer capaciteMax;
     private Boolean disponible;
     private Double latitude;
@@ -46,6 +49,10 @@ public abstract class Livreur implements Serializable {
 
     public Long getId() {
         return id;
+    }
+
+    public Long getVersion() {
+        return version;
     }
 
     public Integer getCapaciteMax() {
@@ -72,8 +79,12 @@ public abstract class Livreur implements Serializable {
         return commandesLivrees;
     }
 
-    public void setId(Long id) {
+    protected void setId(Long id) {
         this.id = id;
+    }
+
+    protected void setVersion(Long version) {
+        this.version = version;
     }
 
     public void setCapaciteMax(Integer capaciteMax) {

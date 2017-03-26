@@ -109,7 +109,7 @@ public class ServiceTechnique {
                     // Du livreur au client, en passant par le restaurant
                     temps = GeoTest.getTripDurationByBicycleInMinute(coordsLivreur, coordsClient, coordsResto);
                 } catch (ZeroResultsException ex) {
-                    Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, "Aucun chemin entre le livreur et le client.");
+                    Logger.getLogger(ServiceMetier.class.getName()).log(Level.WARNING, "Aucun chemin entre le livreur et le client.");
                     continue;
                 }
             }

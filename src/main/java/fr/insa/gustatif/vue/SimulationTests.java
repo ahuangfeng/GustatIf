@@ -4,6 +4,7 @@ import com.google.maps.errors.OverDailyLimitException;
 import fr.insa.gustatif.dao.JpaUtil;
 import fr.insa.gustatif.exceptions.AucunLivreurDisponibleException;
 import fr.insa.gustatif.exceptions.CommandeMalFormeeException;
+import fr.insa.gustatif.exceptions.ServeurOccupeException;
 import fr.insa.gustatif.metier.modele.Client;
 import fr.insa.gustatif.metier.modele.Commande;
 import fr.insa.gustatif.metier.modele.Produit;
@@ -15,7 +16,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.persistence.OptimisticLockException;
+import javax.persistence.PersistenceException;
 import javax.persistence.RollbackException;
 
 /**
@@ -45,19 +49,18 @@ public class SimulationTests {
     }
     
     public void testPasserCommande() {
-        JpaUtil.init();
-
         ServiceMetier sm = new ServiceMetier();
 
         // Effectue plusieurs commandes
         final int NB_COMMANDES = 10;
-        Restaurant r = sm.recupererRestaurant(10L);
-        List<Produit> produits = r.getProduits();
-        Client c = sm.recupererClient("billy.feugeroy@free.fr");
         for (int i = 0; i < NB_COMMANDES; i++) {
-            Saisie.pause();
-
             try {
+                Restaurant r = sm.recupererRestaurant(10L);
+                List<Produit> produits = r.getProduits();
+                Client c = sm.recupererClient("billy.feugeroy@free.fr");
+
+                Saisie.pause();
+
                 List<ProduitCommande> panier = new ArrayList<>();
                 panier.add(new ProduitCommande(produits.get((int) (Math.random() * produits.size())), (int) (Math.random() * 4) + 1));
 
@@ -74,6 +77,10 @@ public class SimulationTests {
                 System.out.println("OptimisticLockException, on est pas censé en avoir ici...");
             } catch (RollbackException ex) {
                 System.out.println("RollbackException, on est pas censé en avoir ici...");
+            } catch (PersistenceException ex) {
+                System.out.println("PersistenceException");
+            } catch (ServeurOccupeException ex) {
+                System.out.println("ServeurOccupeException");
             }
 
             // Vérifie la cohérence de la BDD
@@ -95,7 +102,5 @@ public class SimulationTests {
             }
             System.out.println("BDD cohérente.");
         }
-
-        JpaUtil.destroy();
     }
 }
