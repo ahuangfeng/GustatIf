@@ -105,13 +105,4 @@ public interface BasicDAO<T> {
             return false;
         }
     }
-
-    default public void supprimerToutesLesEntites() throws PersistenceException {
-        String templateName = ((ParameterizedType) getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0].getTypeName();
-        String[] templateFullName = templateName.split("\\.");
-        templateName = templateFullName[templateFullName.length - 1];
-
-        EntityManager em = JpaUtil.obtenirEntityManager();
-        em.createQuery("DELETE FROM " + templateName + " p").executeUpdate();
-    }
 }

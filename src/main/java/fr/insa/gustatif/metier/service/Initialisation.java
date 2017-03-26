@@ -24,12 +24,12 @@ public class Initialisation {
         try {
             ServiceMetier serviceMetier = new ServiceMetier();
             
-            // Vide la BDD existante
-            serviceMetier.viderLaBDD();
+            System.out.println("Pour peupler la BDD, il faut exécuter le script SQL fourni en TP.");
+            System.out.println("Pour vider la BDD, demandez le script SQL du binome B3233 ;)");
             
-            // Remplit avec les données fournies dans le sujet
-            System.out.println("Remplissez la base de donnée avec les données su TP...");
             Saisie.pause();
+            
+            System.out.println("Génération des comptes employés fictifs.");
             
             // Génère les comptes des employés
             serviceMetier.genererComptesFictifs();

@@ -1,9 +1,9 @@
 package fr.insa.gustatif.metier.modele;
 
-import fr.insa.gustatif.exceptions.CommandeMalFormeeException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -29,7 +29,7 @@ public abstract class Livreur implements Serializable {
     private Double longitude;
     @OneToOne
     private Commande commandeEnCours;
-    @OneToMany(cascade = javax.persistence.CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL)
     private List<Commande> commandesLivrees;
 
     protected Livreur() {
@@ -107,11 +107,11 @@ public abstract class Livreur implements Serializable {
     }
 
     public void terminerCommandeEnCours() {
-        Client client = commandeEnCours.getClient();
+        /*Client client = commandeEnCours.getClient();
         if (null != client && null != client.getLatitude() && null != client.getLongitude()) {
             this.latitude = client.getLatitude();
             this.longitude = client.getLongitude();
-        }
+        }*/
         
         this.commandesLivrees.add(commandeEnCours);
         this.commandeEnCours = null;

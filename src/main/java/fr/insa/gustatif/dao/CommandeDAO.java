@@ -2,11 +2,8 @@ package fr.insa.gustatif.dao;
 
 import java.util.List;
 import javax.persistence.EntityManager;
-import javax.persistence.Query;
 import fr.insa.gustatif.metier.modele.Commande;
-import fr.insa.gustatif.metier.modele.Drone;
 import java.util.Date;
-import java.util.Iterator;
 import javax.persistence.PersistenceException;
 
 /**
@@ -15,22 +12,19 @@ import javax.persistence.PersistenceException;
 public class CommandeDAO implements BasicDAO<Commande> {
 
     /**
-     * Retourne toutes les commandes en cours de livraison par un drône.
+     * Retourne toutes les commandes ou uniquement celles en cours.
      *
+     * @param uniquementEnCours si true, uniquement les commandes en cours
      * @return La liste des commandes en cours de livraison par un drône.
      * @throws PersistenceException Si une exception de persistence intervient
      */
-    public List<Commande> recupererCommandesEnCoursParDrone() throws PersistenceException {
+    public List<Commande> recupererCommandesFiltre(boolean uniquementEnCours) throws PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
-        Query q = em.createQuery("SELECT c FROM Commande c WHERE c.dateDeFin is null");
-        List<Commande> lc = q.getResultList();
-        for (Iterator<Commande> it = lc.iterator(); it.hasNext();) {
-            Commande commande = it.next();
-            if (null == commande.getLivreur() || !(commande.getLivreur() instanceof Drone)) {
-                it.remove();
-            }
+        if (uniquementEnCours) {
+            return em.createQuery("SELECT c FROM Commande c WHERE c.dateDeFin is null").getResultList();
+        } else {
+            return em.createQuery("SELECT c FROM Commande c").getResultList();
         }
-        return lc;
     }
 
     /**

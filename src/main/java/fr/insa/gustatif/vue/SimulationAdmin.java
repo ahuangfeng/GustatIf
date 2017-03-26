@@ -103,7 +103,7 @@ public class SimulationAdmin {
                 }
                 case 2: { // Voir mes commandes en cours
                     if (null != identiteCycliste) {
-                        voirCommandesCycliste(identiteCycliste);
+                        voirCommandesLivreur(identiteCycliste);
                     } else {
                         System.out.println("Vous n'êtes pas connecté.");
                     }
@@ -164,7 +164,7 @@ public class SimulationAdmin {
         }
     }
 
-    private void voirCommandesCycliste(Livreur livreur) {
+    private void voirCommandesLivreur(Livreur livreur) {
         if (null != livreur) {
             if (livreur.getCommandesLivrees().isEmpty()) {
                 System.out.println("Aucune commande livrée.");
@@ -272,7 +272,7 @@ public class SimulationAdmin {
                     if (null == livreur) {
                         System.out.println("#ID invalide.");
                     } else {
-                        voirCommandesCycliste(livreur);
+                        voirCommandesLivreur(livreur);
                     }
                     break;
                 }
@@ -341,7 +341,7 @@ public class SimulationAdmin {
             return;
         }
         try {
-            List<Commande> lc = serviceMetier.recupererCommandesEnCoursParDrones();
+            List<Commande> lc = serviceMetier.recupererCommandesFiltre(true, false, true);
             if (lc.isEmpty()) {
                 System.out.println("Il n'y a aucune commande livrée par drône à valider.");
                 return;

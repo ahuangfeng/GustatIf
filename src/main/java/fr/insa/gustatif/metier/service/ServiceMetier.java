@@ -402,15 +402,33 @@ public class ServiceMetier {
     /**
      * Récupère toutes les commandes en cours de livraison par des drônes.
      *
+     * @param uniquementEnCours si true, uniquement les commandes en cours de
+     * livraison, sinon toutes les commandes
+     * @param inclureCyclistes si false, enlève les commandes assignées à des
+     * cyclistes
+     * @param inclureDrones si false, enlève les commandes assignées à des
+     * drônes
      * @return la liste de toutes les commandes en cours de livraison par de
      * drônes
      * @throws PersistenceException Si une exception de persistence intervient
      */
-    public List<Commande> recupererCommandesEnCoursParDrones() throws PersistenceException {
+    public List<Commande> recupererCommandesFiltre(boolean uniquementEnCours, boolean inclureCyclistes, boolean inclureDrones) throws PersistenceException {
         try {
             JpaUtil.creerEntityManager();
             CommandeDAO commandeDAO = new CommandeDAO();
-            return commandeDAO.recupererCommandesEnCoursParDrone();
+
+            List<Commande> resultat = commandeDAO.recupererCommandesFiltre(uniquementEnCours);
+
+            for (Iterator<Commande> it = resultat.iterator(); it.hasNext();) {
+                Commande commande = it.next();
+                if ((!inclureCyclistes && (null == commande.getLivreur() || !(commande.getLivreur() instanceof Cycliste)))
+                        || (!inclureDrones && (null == commande.getLivreur() || !(commande.getLivreur() instanceof Drone)))) {
+                    it.remove();
+                }
+            }
+
+            return resultat;
+
         } finally {
             JpaUtil.fermerEntityManager();
         }
@@ -651,56 +669,6 @@ public class ServiceMetier {
                 }
             }
             return restaurantDAO.findById(idRestaurant);
-        } finally {
-            JpaUtil.fermerEntityManager();
-        }
-    }
-
-    /**
-     * Supprime toutes les entités de la base de donnée.
-     *
-     * @return true si la suppression a eu lieu, sinon false
-     */
-    public boolean viderLaBDD() {
-        try {
-            JpaUtil.creerEntityManager();
-            JpaUtil.ouvrirTransaction();
-
-            Logger l = Logger.getLogger(ServiceMetier.class.getName());
-
-            new ProduitCommandeDAO().supprimerToutesLesEntites();
-            l.log(Level.INFO, "Tous les ProduitCommande ont été supprimés.");
-
-            new CommandeDAO().supprimerToutesLesEntites();
-            l.log(Level.INFO, "Toutes les Commande ont été supprimées.");
-
-            new CyclisteDAO().supprimerToutesLesEntites();
-            l.log(Level.INFO, "Tous les Cycliste ont été supprimés.");
-
-            new DroneDAO().supprimerToutesLesEntites();
-            l.log(Level.INFO, "Tous les Drone ont été supprimés.");
-
-            new LivreurDAO().supprimerToutesLesEntites();
-            l.log(Level.INFO, "Tous les Livreur ont été supprimés.");
-
-            new ClientDAO().supprimerToutesLesEntites();
-            l.log(Level.INFO, "Tous les Client ont été supprimés.");
-
-            new GestionnaireDAO().supprimerToutesLesEntites();
-            l.log(Level.INFO, "Tous les Gestionnaire ont été supprimés.");
-
-            new RestaurantDAO().supprimerToutesLesEntites();
-            l.log(Level.INFO, "Tous les Restaurant ont été supprimés.");
-
-            new ProduitDAO().supprimerToutesLesEntites();
-            l.log(Level.INFO, "Tous les Produit ont été supprimés.");
-
-            JpaUtil.validerTransaction();
-            return true;
-        } catch (PersistenceException ex) {
-            System.err.println("Une erreur est survenue lors du nettoyage de la BDD.");
-            JpaUtil.annulerTransaction();
-            return false;
         } finally {
             JpaUtil.fermerEntityManager();
         }
