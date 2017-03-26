@@ -13,7 +13,7 @@ public class GestionnaireDAO implements BasicDAO<Gestionnaire>, EmailDAO<Gestion
     /**
      * NE PAS UTILISER CETTE METHODE, UTILISER creerClient()
      *
-     * @param gestionnaire
+     * @param gestionnaire Non utilisé.
      */
     @Override
     public void creer(Gestionnaire gestionnaire) {
@@ -24,7 +24,7 @@ public class GestionnaireDAO implements BasicDAO<Gestionnaire>, EmailDAO<Gestion
      * Crée un gestionnaire en vérifiant que le mail est unique.
      *
      * @param gestionnaire Le gestionnaire à persister
-     * @throws fr.insa.gustatif.exceptions.DuplicateEmailException
+     * @throws DuplicateEmailException Si le mail est déjà utilisé.
      * @throws PersistenceException Si une exception de persistence intervient
      */
     public void creerGestionnaire(Gestionnaire gestionnaire) throws PersistenceException, DuplicateEmailException {

@@ -15,7 +15,7 @@ public class ClientDAO implements BasicDAO<Client>, EmailDAO<Client> {
     /**
      * NE PAS UTILISER CETTE METHODE, UTILISER creerClient()
      *
-     * @param client
+     * @param client Non utilisé.
      */
     @Override
     public void creer(Client client) {
@@ -25,7 +25,7 @@ public class ClientDAO implements BasicDAO<Client>, EmailDAO<Client> {
     /**
      * NE PAS UTILISER CETTE METHODE, UTILISER modifierClient()
      *
-     * @param client
+     * @param client Non utilisé.
      */
     @Override
     public boolean modifier(Client client, long id) {
