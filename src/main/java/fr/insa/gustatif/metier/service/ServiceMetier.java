@@ -151,7 +151,7 @@ public class ServiceMetier {
                             corpsMail += "\n" + "TOTAL : " + prixTotal + " €";
 
                             String sujetMail = "Livraison n°" + commande.getId() + " à effectuer";
-                            serviceTechnique.envoyerMail(client.getMail(), sujetMail, corpsMail);
+                            serviceTechnique.envoyerMail(c.getMail(), sujetMail, corpsMail);
                         }
 
                         return commande;
