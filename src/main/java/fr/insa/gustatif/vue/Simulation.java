@@ -7,7 +7,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * Classe de lancement de la simulation textuelle. Permet de lancer l'IHM
+ * publique, l'IHM d'administration ou les tests.
  */
 public class Simulation {
 
@@ -15,19 +16,18 @@ public class Simulation {
         try {
             JpaUtil.init();
         } catch (Exception e) {
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, 
+            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE,
                     "Impossible d'initialiser le contexte de persistance. Le serveur de BDD est sûrement arrêté."
             );
             System.exit(1);
         }
 
         int choix = -1;
-        while (choix != 5) {
+        while (choix != 4) {
             choix = Saisie.choixMenu("Quelle simulation voulez-vous lancer ?", new String[]{
                 "Simulation de l'IHM publique",
                 "Simulation de l'IHM d'admin",
                 "Tests",
-                "Peupler la base de données (démo)",
                 "Quitter"
             });
 
@@ -45,11 +45,6 @@ public class Simulation {
                 case 3: {
                     SimulationTests st = new SimulationTests();
                     st.run();
-                    break;
-                }
-                case 4: {
-                    ServiceMetier sm = new ServiceMetier();
-                    sm.genererComptesFictifs();
                     break;
                 }
             }

@@ -1,7 +1,8 @@
 package fr.insa.gustatif.exceptions;
 
 /**
- *
+ * Cette exception signifie que les informations de l'utilisateur sont
+ * invalides. Lire le message pour obtenir les détails.
  */
 public class IllegalUserInfoException extends Exception {
 

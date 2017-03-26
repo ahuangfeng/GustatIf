@@ -1,13 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package fr.insa.gustatif.exceptions;
 
 /**
- *  TODO : traiter execption
+ * Cette exception signifie qu'aucun livreur n'est disponible pour livrer la
+ * commande.
  */
-public class AucunLivreurDisponibleException extends Exception{
-    
+public class AucunLivreurDisponibleException extends Exception {
 }

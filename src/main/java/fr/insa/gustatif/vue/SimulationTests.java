@@ -19,7 +19,7 @@ import javax.persistence.OptimisticLockException;
 import javax.persistence.RollbackException;
 
 /**
- * Ce fichier contient les tests de la simulation
+ * Ce fichier contient les tests de la simulation.
  */
 public class SimulationTests {
 

@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 import javax.persistence.PersistenceException;
 
 /**
- *
+ * Simulation textuelle de l'IHM d'administration.
  */
 public class SimulationAdmin {
 

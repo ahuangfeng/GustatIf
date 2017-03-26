@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 import javax.persistence.PersistenceException;
 
 /**
- * Ce fichier contient la simulaiton de la partie publique
+ * Simulation textuelle de l'IHM publique.
  */
 public class SimulationPublique {
 

@@ -1,9 +1,11 @@
 package fr.insa.gustatif.exceptions;
 
 /**
- *
+ * Cette exception signifie que le mail est déjà utilisé par une autre entité
+ * dans la base de données.
  */
 public class DuplicateEmailException extends Exception {
+
     String requestedEmail;
 
     public DuplicateEmailException(String requestedEmail) {

@@ -37,10 +37,9 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.PersistenceException;
-import javax.persistence.Query;
 
 /**
- * Cette classe contient tous les services métiers de Gustat'IF
+ * Cette classe contient tous les services métiers de Gustat'IF.
  */
 public class ServiceMetier {
 

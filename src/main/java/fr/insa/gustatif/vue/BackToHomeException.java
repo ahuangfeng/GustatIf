@@ -7,5 +7,4 @@ package fr.insa.gustatif.vue;
  * catch trop large.
  */
 public class BackToHomeException extends Throwable {
-    
 }
