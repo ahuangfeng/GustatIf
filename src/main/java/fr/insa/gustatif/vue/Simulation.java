@@ -26,6 +26,7 @@ public class Simulation {
             choix = Saisie.choixMenu("Quelle simulation voulez-vous lancer ?", new String[]{
                 "Simulation de l'IHM publique",
                 "Simulation de l'IHM d'admin",
+                "Tests",
                 "Peupler la base de données (démo)",
                 "Quitter"
             });
@@ -42,6 +43,11 @@ public class Simulation {
                     break;
                 }
                 case 3: {
+                    SimulationTests st = new SimulationTests();
+                    st.run();
+                    break;
+                }
+                case 4: {
                     ServiceMetier sm = new ServiceMetier();
                     sm.genererComptesFictifs();
                     break;

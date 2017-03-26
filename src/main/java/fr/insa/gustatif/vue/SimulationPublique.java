@@ -20,8 +20,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.PersistenceException;
 
-/** TODO : si l'utilisateur se déconnecte, le panier se vide ou pas?
- *
+/**
+ * Ce fichier contient la simulaiton de la partie publique
  */
 public class SimulationPublique {
 

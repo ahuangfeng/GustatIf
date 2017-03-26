@@ -3,9 +3,7 @@ package fr.insa.gustatif.vue;
 import com.google.maps.errors.OverDailyLimitException;
 import fr.insa.gustatif.dao.JpaUtil;
 import fr.insa.gustatif.exceptions.AucunLivreurDisponibleException;
-import fr.insa.gustatif.exceptions.DuplicateEmailException;
 import fr.insa.gustatif.exceptions.CommandeMalFormeeException;
-import fr.insa.gustatif.exceptions.IllegalUserInfoException;
 import fr.insa.gustatif.metier.modele.Client;
 import fr.insa.gustatif.metier.modele.Commande;
 import fr.insa.gustatif.metier.modele.Produit;
@@ -21,11 +19,32 @@ import javax.persistence.OptimisticLockException;
 import javax.persistence.RollbackException;
 
 /**
- *
+ * Ce fichier contient les tests de la simulation
  */
-public class Main {
+public class SimulationTests {
 
-    public static void main(String[] args) throws DuplicateEmailException, IllegalUserInfoException {
+    public void run() {
+        accueil();
+    }
+
+    public void accueil() {
+        int choix = -1;
+        while (choix != 2) {
+            System.out.println("Liste des tests.");
+            choix = Saisie.choixMenu("Que voulez-vous faire ?", new String[]{
+                "Passer des commandes factices (10 requêtes)",
+                "Retour"
+            });
+            switch (choix) {
+                case 1: { // Passer des commandes factices (10 requêtes)
+                    testPasserCommande();
+                    break;
+                }
+            }
+        }
+    }
+    
+    public void testPasserCommande() {
         JpaUtil.init();
 
         ServiceMetier sm = new ServiceMetier();
