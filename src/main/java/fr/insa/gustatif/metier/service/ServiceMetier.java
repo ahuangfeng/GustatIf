@@ -27,7 +27,6 @@ import fr.insa.gustatif.metier.modele.Produit;
 import fr.insa.gustatif.metier.modele.ProduitCommande;
 import fr.insa.gustatif.metier.modele.Restaurant;
 import fr.insa.gustatif.util.GeoTest;
-import fr.insa.gustatif.util.Saisie;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -37,13 +36,10 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.persistence.LockModeType;
-import javax.persistence.OptimisticLockException;
 import javax.persistence.PersistenceException;
-import javax.persistence.RollbackException;
 
 /**
- * TODO: Annuler une commande
+ * Cette classe contient tous les services métiers de Gustat'IF
  */
 public class ServiceMetier {
 
@@ -54,286 +50,20 @@ public class ServiceMetier {
     }
 
     /**
-     * Crée un client en vérifiant que le mail est unique.
+     * Crée une commande à partir d'un panier. Assigne le livreur avec le
+     * meilleur temps de livraison estimé, et ajoute la commande au client.
      *
-     * @param client Le client à enregistrer dans la BDD
-     * @return true si le client a été créé, sinon false (mail déjà utilisé)
-     * @throws fr.insa.gustatif.exceptions.DuplicateEmailException
-     * @throws fr.insa.gustatif.exceptions.IllegalUserInfoException
-     * @throws com.google.maps.errors.NotFoundException
+     * @param client Le client passant cette commande.
+     * @param listeProduits La liste des produits de la commande (le panier).
+     * @return La commande créée.
+     * @throws CommandeMalFormeeException Si la commande n'est pas valide. Pour
+     * cela, utiliser la méthode validerPanier()
+     * @throws AucunLivreurDisponibleException Si aucun livreur n'est disponible
+     * pour livrer la commande
+     * @throws OverDailyLimitException Si le quota Google Maps est atteint
+     * @throws PersistenceException Si une exception de persistence intervient
      */
-    public boolean inscrireClient(Client client) throws DuplicateEmailException, IllegalUserInfoException, NotFoundException {
-        final Runnable envoyerMailSucces = () -> {
-            serviceTechnique.envoyerMail(client.getMail(),
-                    "Bienvenue chez Gustat'IF",
-                    "Bonjour " + client.getPrenom() + "," + "\n"
-                    + "Nous vous confirmons votre inscription au service Gustat'IF. "
-                    + "Votre numéro de client est : " + client.getId() + "."
-            );
-        };
-        final Runnable envoyerMailEchec = () -> {
-            serviceTechnique.envoyerMail(client.getMail(),
-                    "Votre inscription chez Gustat'IF",
-                    "Bonjour " + client.getPrenom() + "," + "\n"
-                    + "Votre inscription au service Gustat'IF a malencontreusement échoué... "
-                    + "Merci de recommencer ultérieusement."
-            );
-        };
-
-        // Vérifie si le mail est valide
-        if (!serviceTechnique.verifierMail(client.getMail())) {
-            throw new IllegalUserInfoException("Le mail n'est pas valide.");
-        }
-
-        try {
-            // Récupère les coordonnées
-            LatLng coords = GeoTest.getLatLng(client.getAdresse());
-
-            // Persiste le client
-            JpaUtil.creerEntityManager();
-            JpaUtil.ouvrirTransaction();
-            ClientDAO clientDAO = new ClientDAO();
-            client.setLatitudeLongitude(coords);
-            clientDAO.creerClient(client);
-
-            // Le client a été créé
-            envoyerMailSucces.run();
-            JpaUtil.validerTransaction();
-            return true;
-        } catch (DuplicateEmailException | IllegalUserInfoException e) {
-            JpaUtil.annulerTransaction();
-            throw e;
-        } catch (NotFoundException e) {
-            envoyerMailEchec.run();
-            JpaUtil.annulerTransaction();
-            throw e;
-        } catch (PersistenceException e) {
-            envoyerMailEchec.run();
-            JpaUtil.annulerTransaction();
-            return false;
-        } finally {
-            JpaUtil.annulerTransaction();
-            JpaUtil.fermerEntityManager();
-        }
-    }
-
-    /**
-     *
-     * TODO: Tester ce qu'il se passe au niveau du client si la modif est
-     * refusée
-     *
-     * @param client
-     * @param nom
-     * @param prenom
-     * @param adresse
-     * @param email
-     * @return
-     * @throws com.google.maps.errors.NotFoundException
-     * @throws fr.insa.gustatif.exceptions.DuplicateEmailException
-     */
-    public boolean modifierClient(Client client, String nom, String prenom, String email, String adresse)
-            throws DuplicateEmailException, NotFoundException {
-        // Récupère les coordonnées
-        LatLng coords = GeoTest.getLatLng(client.getAdresse());
-
-        try {
-            JpaUtil.creerEntityManager();
-            JpaUtil.ouvrirTransaction();
-
-            ClientDAO clientDAO = new ClientDAO();
-            client.setLatitudeLongitude(coords);
-            clientDAO.modifierClient(client, nom, prenom, email, adresse);
-
-            JpaUtil.validerTransaction();
-            return true;
-        } catch (PersistenceException e) {
-            JpaUtil.annulerTransaction();
-            return false;
-        } catch (DuplicateEmailException ex) {
-            JpaUtil.annulerTransaction();
-            throw ex;
-        } finally {
-            JpaUtil.annulerTransaction();
-            JpaUtil.fermerEntityManager();
-        }
-    }
-
-    /**
-     * TODO: vérifier le return
-     *
-     * @param idClient
-     * @return la liste de tous les clients
-     */
-    public Client recupererClient(Long idClient) {
-        try {
-            JpaUtil.creerEntityManager();
-            ClientDAO clientDAO = new ClientDAO();
-            return clientDAO.findById(idClient);
-        } finally {
-            JpaUtil.annulerTransaction();
-            JpaUtil.fermerEntityManager();
-        }
-    }
-
-    /**
-     * TODO: vérifier le return
-     *
-     * @param mail
-     * @return la liste de tous les clients
-     */
-    public Client recupererClient(String mail) {
-        JpaUtil.creerEntityManager();
-        ClientDAO clientDAO = new ClientDAO();
-        try {
-            return clientDAO.findByEmail(mail);
-        } catch (PersistenceException ex) {
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            JpaUtil.annulerTransaction();
-            JpaUtil.fermerEntityManager();
-        }
-        return null;
-    }
-
-    /**
-     * TODO: vérifier le return
-     *
-     * @return la liste de tous les clients
-     */
-    public List<Client> recupererClients() {
-        JpaUtil.creerEntityManager();
-        ClientDAO clientDAO = new ClientDAO();
-        try {
-            return clientDAO.findAll();
-        } catch (Exception ex) {
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            JpaUtil.annulerTransaction();
-            JpaUtil.fermerEntityManager();
-        }
-        return new ArrayList<>();
-    }
-
-    /**
-     * TODO: vérifier le return
-     *
-     * @param idRestaurant
-     * @return
-     */
-    public Restaurant recupererRestaurant(Long idRestaurant) {
-        JpaUtil.creerEntityManager();
-        RestaurantDAO restaurantDAO = new RestaurantDAO();
-        try {
-            return restaurantDAO.findById(idRestaurant);
-        } catch (Exception ex) {
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            JpaUtil.annulerTransaction();
-            JpaUtil.fermerEntityManager();
-        }
-        return null;
-    }
-
-    /**
-     * TODO: vérifier le return
-     *
-     * @return
-     */
-    public List<Restaurant> recupererRestaurants() {
-        JpaUtil.creerEntityManager();
-        RestaurantDAO restaurantDAO = new RestaurantDAO();
-        try {
-            return restaurantDAO.findAll();
-        } catch (Exception ex) {
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            JpaUtil.annulerTransaction();
-            JpaUtil.fermerEntityManager();
-        }
-        return new ArrayList<>();
-    }
-
-    /**
-     * TODO: vérifier le return
-     *
-     * @return
-     */
-    public List<Livreur> recupererLivreurs() {
-        JpaUtil.creerEntityManager();
-        LivreurDAO livreurDAO = new LivreurDAO();
-        try {
-            return livreurDAO.findAll();
-        } catch (Exception ex) {
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            JpaUtil.annulerTransaction();
-            JpaUtil.fermerEntityManager();
-        }
-        return new ArrayList<>();
-    }
-
-    public Livreur recupererLivreur(long id) {
-        JpaUtil.creerEntityManager();
-        LivreurDAO livreurDAO = new LivreurDAO();
-        try {
-            return livreurDAO.findById(id);
-        } catch (Exception ex) {
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            JpaUtil.annulerTransaction();
-            JpaUtil.fermerEntityManager();
-        }
-        return null;
-    }
-
-    /**
-     * Vérifie la validité d'une commande, c'est-à-dire si tous les produits
-     * proviennent du même restaurant.
-     *
-     * @param panier Le panier à valider
-     * @return L'ID du restaurant qui vend ces produits
-     * @throws fr.insa.gustatif.exceptions.CommandeMalFormeeException Si la
-     * commande n'est pas valide. L'exception contient le message d'erreur avec
-     * les détails.
-     */
-    public Restaurant validerPanier(List<ProduitCommande> panier) throws CommandeMalFormeeException {
-        if (panier.isEmpty()) {
-            throw new CommandeMalFormeeException("Une commande doit comporter au moins un produit !");
-        }
-        try {
-            JpaUtil.creerEntityManager();
-
-            RestaurantDAO restaurantDAO = new RestaurantDAO();
-
-            Long idRestaurant = -1L;
-            for (ProduitCommande pc : panier) {
-                Long id = restaurantDAO.getRestaurantIdByProduit(pc.getProduit().getId());
-                if (idRestaurant < 0) {
-                    idRestaurant = id;
-                } else if (pc.getQuantity() <= 0) {
-                    throw new CommandeMalFormeeException("La quantité de chaque produit doit être strictement positive !");
-                } else if (!Objects.equals(id, idRestaurant)) {
-                    throw new CommandeMalFormeeException("Les produits de cette commande n'appartiennent pas tous au même restaurant !");
-                }
-            }
-            return restaurantDAO.findById(idRestaurant);
-        } finally {
-            JpaUtil.annulerTransaction();
-            JpaUtil.fermerEntityManager();
-        }
-    }
-
-    /**
-     * Vérifie la commande
-     *
-     * @param client
-     * @param listeProduits
-     * @return
-     * @throws CommandeMalFormeeException
-     * @throws AucunLivreurDisponibleException
-     * @throws com.google.maps.errors.OverDailyLimitException
-     */
-    public Commande creerCommande(Client client, List<ProduitCommande> listeProduits) throws CommandeMalFormeeException, AucunLivreurDisponibleException, OverDailyLimitException {
+    public Commande creerCommande(Client client, List<ProduitCommande> listeProduits) throws CommandeMalFormeeException, AucunLivreurDisponibleException, OverDailyLimitException, PersistenceException {
         // Vérifie la validité de la commande
         Restaurant resto = validerPanier(listeProduits);
         if (null == resto) {
@@ -396,176 +126,11 @@ public class ServiceMetier {
     }
 
     /**
-     * TODO : qu'est-ce qui se passe si le livreur a des commandes en cours? on
-     * lui assigne aussi? et Difference entre getDisponible et
+     * Génère des cyclistes, drônes et gestionnaires aléatoirement, pour la
+     * simulation.
      *
-     * PARLER DU FAIT QU'IL FAUT UN ENTITYMANAGER DEJA OUVERT
-     *
-     * @param commande
-     * @return TODO
-     * @throws AucunLivreurDisponibleException
+     * @throws PersistenceException Si une exception de persistence intervient
      */
-    private Map<Double, Livreur> recupererLivreursParTemps(Commande commande) throws AucunLivreurDisponibleException, OverDailyLimitException, CommandeMalFormeeException {
-        if (null == commande.getClient()) {
-            throw new CommandeMalFormeeException("Le client n'est pas défini.");
-        }
-        if (null == commande.getClient().getLatitude() || null == commande.getClient().getLongitude()) {
-            throw new CommandeMalFormeeException("Le client n'est pas géolocalisé.");
-        }
-
-        // Quelques raccourcis
-        LatLng coordsClient = new LatLng(commande.getClient().getLatitude(), commande.getClient().getLongitude());
-        LatLng coordsResto = new LatLng(commande.getRestaurant().getLatitude(), commande.getRestaurant().getLongitude());
-
-        // Tri les livreurs par temps pour livrer la commande
-        LivreurDAO livreurDAO = new LivreurDAO();
-        List<Livreur> livreursDispo = livreurDAO.recupererCapablesDeLivrer(commande.getPoids());
-        Map<Double, Livreur> livreursParTemps = new TreeMap<>();
-        for (Livreur livreur : livreursDispo) {
-            LatLng coordsLivreur = new LatLng(livreur.getLatitude(), livreur.getLongitude());
-
-            // Calcule le temps en fonction du type de livreur
-            double temps;
-            if (livreur instanceof Drone) {
-                temps = ((Drone) livreur).getVitesse()
-                        // Du livreur au restaurant
-                        * (GeoTest.getFlightDistanceInKm(coordsLivreur, coordsResto)
-                        // puis du restaurant au client
-                        + GeoTest.getFlightDistanceInKm(coordsResto, coordsClient));
-            } else {
-                try {
-                    // Du livreur au client, en passant par le restaurant
-                    temps = GeoTest.getTripDurationByBicycleInMinute(coordsLivreur, coordsClient, coordsResto);
-                } catch (ZeroResultsException ex) {
-                    Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, "Aucun chemin entre le livreur et le client.");
-                    continue;
-                }
-            }
-
-            // Ajoute le livreur dans la map
-            livreursParTemps.put(temps, livreur);
-        }
-
-        return livreursParTemps;
-    }
-
-    /**
-     * TODO: A VOIR SI UTILE TODO: vérifier le return
-     *
-     * @param idCommande
-     * @return
-     */
-    public Commande recupererCommande(Long idCommande) {
-        JpaUtil.creerEntityManager();
-        CommandeDAO commandeDAO = new CommandeDAO();
-        try {
-            return commandeDAO.findById(idCommande);
-
-        } catch (Exception ex) {
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
-            return null;
-        } finally {
-            JpaUtil.annulerTransaction();
-            JpaUtil.fermerEntityManager();
-        }
-    }
-
-    /**
-     * TODO: vérifier le return
-     *
-     * @return
-     */
-    public List<Commande> recupererCommandes() {
-        JpaUtil.creerEntityManager();
-        CommandeDAO commandeDAO = new CommandeDAO();
-        try {
-            return commandeDAO.findAll();
-
-        } catch (Exception ex) {
-            Logger.getLogger(ServiceMetier.class
-                    .getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            JpaUtil.annulerTransaction();
-            JpaUtil.fermerEntityManager();
-        }
-        return new ArrayList<>();
-    }
-
-    public List<Commande> recupererCommandesEnCoursParDrones() {
-        try {
-            JpaUtil.creerEntityManager();
-            CommandeDAO commandeDAO = new CommandeDAO();
-            return commandeDAO.recupererCommandesEnCoursParDrones();
-        } finally {
-            JpaUtil.annulerTransaction();
-            JpaUtil.fermerEntityManager();
-        }
-    }
-
-    public Produit recupererProduit(long idProduit) {
-        JpaUtil.creerEntityManager();
-        ProduitDAO produitDAO = new ProduitDAO();
-        try {
-            return produitDAO.findById(idProduit);
-
-        } catch (Exception ex) {
-            Logger.getLogger(ServiceMetier.class
-                    .getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            JpaUtil.annulerTransaction();
-            JpaUtil.fermerEntityManager();
-        }
-        return null;
-    }
-
-    /**
-     * @param commande
-     */
-    public void validerCommande(Commande commande) {
-        try {
-            JpaUtil.creerEntityManager();
-            JpaUtil.ouvrirTransaction();
-            CommandeDAO commandeDAO = new CommandeDAO();
-            commandeDAO.validerCommande(commande);
-            LivreurDAO livreurDAO = new LivreurDAO();
-            livreurDAO.terminerCommandeEnCours(commande.getLivreur());
-            JpaUtil.validerTransaction();
-        } finally {
-            JpaUtil.annulerTransaction();
-            JpaUtil.fermerEntityManager();
-        }
-    }
-
-    public Cycliste recupererCycliste(String email) {
-        JpaUtil.creerEntityManager();
-        CyclisteDAO cyclisteDAO = new CyclisteDAO();
-        try {
-            return cyclisteDAO.findByEmail(email);
-
-        } catch (PersistenceException ex) {
-            Logger.getLogger(ServiceMetier.class
-                    .getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            JpaUtil.annulerTransaction();
-            JpaUtil.fermerEntityManager();
-        }
-        return null;
-    }
-
-    public Gestionnaire recupererGestionnaire(String email) {
-        JpaUtil.creerEntityManager();
-        GestionnaireDAO gestionnaireDAO = new GestionnaireDAO();
-        try {
-            return gestionnaireDAO.findByEmail(email);
-        } catch (PersistenceException ex) {
-            Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            JpaUtil.annulerTransaction();
-            JpaUtil.fermerEntityManager();
-        }
-        return null;
-    }
-
     public void genererComptesFictifs() throws PersistenceException {
         try {
             JpaUtil.creerEntityManager();
@@ -646,6 +211,448 @@ public class ServiceMetier {
             JpaUtil.validerTransaction();
         } finally {
             JpaUtil.annulerTransaction();
+            JpaUtil.fermerEntityManager();
+        }
+    }
+
+    /**
+     * Crée un client en vérifiant que le mail est unique. Vérifie également les
+     * données du client, et géolocalise le client avec son adresse.
+     *
+     * @param client Le client à enregistrer dans la BDD
+     * @return true si le client a été créé, sinon false (mail déjà utilisé)
+     * @throws DuplicateEmailException Si le mail est déjà utilisé.
+     * @throws IllegalUserInfoException Si les informations de l'utilisateur
+     * sont invalides
+     * @throws NotFoundException Si l'adresse n'est pas reconnue par Google Maps
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public boolean inscrireClient(Client client) throws DuplicateEmailException, IllegalUserInfoException, NotFoundException, PersistenceException {
+        final Runnable envoyerMailSucces = () -> {
+            serviceTechnique.envoyerMail(client.getMail(),
+                    "Bienvenue chez Gustat'IF",
+                    "Bonjour " + client.getPrenom() + "," + "\n"
+                    + "Nous vous confirmons votre inscription au service Gustat'IF. "
+                    + "Votre numéro de client est : " + client.getId() + "."
+            );
+        };
+        final Runnable envoyerMailEchec = () -> {
+            serviceTechnique.envoyerMail(client.getMail(),
+                    "Votre inscription chez Gustat'IF",
+                    "Bonjour " + client.getPrenom() + "," + "\n"
+                    + "Votre inscription au service Gustat'IF a malencontreusement échoué... "
+                    + "Merci de recommencer ultérieusement."
+            );
+        };
+
+        // Vérifie si le mail est valide
+        if (!serviceTechnique.verifierMail(client.getMail())) {
+            throw new IllegalUserInfoException("Le mail n'est pas valide.");
+        }
+
+        try {
+            // Récupère les coordonnées
+            LatLng coords = GeoTest.getLatLng(client.getAdresse());
+
+            // Persiste le client
+            JpaUtil.creerEntityManager();
+            JpaUtil.ouvrirTransaction();
+            ClientDAO clientDAO = new ClientDAO();
+            client.setLatitudeLongitude(coords);
+            clientDAO.creerClient(client);
+
+            // Le client a été créé
+            envoyerMailSucces.run();
+            JpaUtil.validerTransaction();
+            return true;
+        } catch (DuplicateEmailException | IllegalUserInfoException e) {
+            throw e;
+        } catch (NotFoundException e) {
+            envoyerMailEchec.run();
+            throw e;
+        } catch (PersistenceException e) {
+            envoyerMailEchec.run();
+            return false;
+        } finally {
+            JpaUtil.fermerEntityManager();
+        }
+    }
+
+    /**
+     * Modifie les données d'un client. Pour ne pas modifier une valeur, laisser
+     * le champ à null. L'adresse est validée par l'API Google Maps.
+     *
+     * @param client Le client à mettre à jour
+     * @param nom Le nouveau nom, ou null
+     * @param prenom Le nouveau prénom, ou null
+     * @param email Le nouvel email, ou null
+     * @param adresse La nouvelle adresse, ou null
+     * @return true si le client a été modifié, sinon false
+     * @throws DuplicateEmailException Si le mail est déjà utilisé.
+     * @throws NotFoundException Si l'adresse n'est pas reconnue par Google Maps
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public boolean modifierClient(Client client, String nom, String prenom, String email, String adresse)
+            throws DuplicateEmailException, NotFoundException, PersistenceException {
+        // Récupère les coordonnées
+        LatLng coords = GeoTest.getLatLng(client.getAdresse());
+
+        try {
+            JpaUtil.creerEntityManager();
+            JpaUtil.ouvrirTransaction();
+
+            ClientDAO clientDAO = new ClientDAO();
+            client.setLatitudeLongitude(coords);
+            clientDAO.modifierClient(client, nom, prenom, email, adresse);
+
+            JpaUtil.validerTransaction();
+            return true;
+        } catch (PersistenceException e) {
+            return false;
+        } catch (DuplicateEmailException ex) {
+            throw ex;
+        } finally {
+            JpaUtil.fermerEntityManager();
+        }
+    }
+
+    /**
+     * Récupère le client ayant l'ID id, ou null s'il n'existe pas.
+     *
+     * @param id L'ID du client à récupérer
+     * @return Le client ayant l'ID id, ou null
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public Client recupererClient(Long id) throws PersistenceException {
+        try {
+            JpaUtil.creerEntityManager();
+            ClientDAO clientDAO = new ClientDAO();
+            return clientDAO.findById(id);
+        } finally {
+            JpaUtil.fermerEntityManager();
+        }
+    }
+
+    /**
+     * Récupère le client ayant le mail donné en paramètre, ou null s'il
+     * n'existe pas.
+     *
+     * @param mail Le mail du client à récupérer.
+     * @return Le client ayant le mail donné, ou null
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public Client recupererClient(String mail) throws PersistenceException {
+        try {
+            JpaUtil.creerEntityManager();
+            ClientDAO clientDAO = new ClientDAO();
+            return clientDAO.findByEmail(mail);
+        } finally {
+            JpaUtil.fermerEntityManager();
+        }
+    }
+
+    /**
+     * Récupère tous les clients.
+     *
+     * @return la liste de tous les clients
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public List<Client> recupererClients() throws PersistenceException {
+        try {
+            JpaUtil.creerEntityManager();
+            ClientDAO clientDAO = new ClientDAO();
+            return clientDAO.findAll();
+        } finally {
+            JpaUtil.fermerEntityManager();
+        }
+    }
+
+    /**
+     * Récupère la commande ayant l'ID id, ou null si elle n'existe pas.
+     *
+     * @param id L'ID de la commande à récupérer
+     * @return La commande ayant l'ID id, ou null
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public Commande recupererCommande(Long id) throws PersistenceException {
+        try {
+            JpaUtil.creerEntityManager();
+            CommandeDAO commandeDAO = new CommandeDAO();
+            return commandeDAO.findById(id);
+        } finally {
+            JpaUtil.fermerEntityManager();
+        }
+    }
+
+    /**
+     * Récupère toutes les commandes.
+     *
+     * @return la liste de toutes les commandes
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public List<Commande> recupererCommandes() throws PersistenceException {
+        try {
+            JpaUtil.creerEntityManager();
+            CommandeDAO commandeDAO = new CommandeDAO();
+            return commandeDAO.findAll();
+        } finally {
+            JpaUtil.fermerEntityManager();
+        }
+    }
+
+    /**
+     * Récupère toutes les commandes en cours de livraison par des drônes.
+     *
+     * @return la liste de toutes les commandes en cours de livraison par de
+     * drônes
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public List<Commande> recupererCommandesEnCoursParDrones() throws PersistenceException {
+        try {
+            JpaUtil.creerEntityManager();
+            CommandeDAO commandeDAO = new CommandeDAO();
+            return commandeDAO.recupererCommandesEnCoursParDrones();
+        } finally {
+            JpaUtil.fermerEntityManager();
+        }
+    }
+
+    /**
+     * Récupère le cycliste ayant le mail donné en paramètre, ou null s'il
+     * n'existe pas.
+     *
+     * @param mail Le mail du cycliste à récupérer.
+     * @return Le cycliste ayant le mail donné, ou null
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public Cycliste recupererCycliste(String email) throws PersistenceException {
+        try {
+            JpaUtil.creerEntityManager();
+            CyclisteDAO cyclisteDAO = new CyclisteDAO();
+            return cyclisteDAO.findByEmail(email);
+        } finally {
+            JpaUtil.fermerEntityManager();
+        }
+    }
+
+    /**
+     * Récupère le gestionnaire ayant le mail donné en paramètre, ou null s'il
+     * n'existe pas.
+     *
+     * @param mail Le mail du gestionnaire à récupérer.
+     * @return Le gestionnaire ayant le mail donné, ou null
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public Gestionnaire recupererGestionnaire(String email) throws PersistenceException {
+        try {
+            JpaUtil.creerEntityManager();
+            GestionnaireDAO gestionnaireDAO = new GestionnaireDAO();
+            return gestionnaireDAO.findByEmail(email);
+        } finally {
+            JpaUtil.fermerEntityManager();
+        }
+    }
+
+    /**
+     *
+     * Récupère le livreur ayant l'ID id, ou null s'il n'existe pas.
+     *
+     * @param id L'ID du livreur à récupérer
+     * @return Le livreur ayant l'ID id, ou null
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public Livreur recupererLivreur(long id) throws PersistenceException {
+        try {
+            JpaUtil.creerEntityManager();
+            LivreurDAO livreurDAO = new LivreurDAO();
+            return livreurDAO.findById(id);
+        } finally {
+            JpaUtil.fermerEntityManager();
+        }
+    }
+
+    /**
+     * Récupère tous les livreurs.
+     *
+     * @return la liste de tous les livreurs
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public List<Livreur> recupererLivreurs() throws PersistenceException {
+        try {
+            JpaUtil.creerEntityManager();
+            LivreurDAO livreurDAO = new LivreurDAO();
+            return livreurDAO.findAll();
+        } finally {
+            JpaUtil.fermerEntityManager();
+        }
+    }
+
+    /**
+     * Méthode privée.
+     *
+     * Retourne les livreurs disponibles avec le temps estimé pour la livraison.
+     * Il faut absolument qu'un EntityManager soit créé pour appeler cette
+     * méthode.
+     *
+     * @param commande Commande à livrer.
+     * @return Une Map (tempsEstimé, Livreur)
+     * @throws CommandeMalFormeeException Si la commande n'a pas de client, ou
+     * si celui-ci n'a pas de coordonnées
+     * @throws OverDailyLimitException Si le quota Google Maps est atteint
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    private Map<Double, Livreur> recupererLivreursParTemps(Commande commande) throws OverDailyLimitException, CommandeMalFormeeException, PersistenceException {
+        if (null == commande.getClient()) {
+            throw new CommandeMalFormeeException("Le client n'est pas défini.");
+        }
+        if (null == commande.getClient().getLatitude() || null == commande.getClient().getLongitude()) {
+            throw new CommandeMalFormeeException("Le client n'est pas géolocalisé.");
+        }
+
+        // Quelques raccourcis
+        LatLng coordsClient = new LatLng(commande.getClient().getLatitude(), commande.getClient().getLongitude());
+        LatLng coordsResto = new LatLng(commande.getRestaurant().getLatitude(), commande.getRestaurant().getLongitude());
+
+        // Tri les livreurs par temps pour livrer la commande
+        LivreurDAO livreurDAO = new LivreurDAO();
+        List<Livreur> livreursDispo = livreurDAO.recupererCapablesDeLivrer(commande.getPoids());
+        Map<Double, Livreur> livreursParTemps = new TreeMap<>();
+        for (Livreur livreur : livreursDispo) {
+            LatLng coordsLivreur = new LatLng(livreur.getLatitude(), livreur.getLongitude());
+
+            // Calcule le temps en fonction du type de livreur
+            double temps;
+            if (livreur instanceof Drone) {
+                temps = ((Drone) livreur).getVitesse()
+                        // Du livreur au restaurant
+                        * (GeoTest.getFlightDistanceInKm(coordsLivreur, coordsResto)
+                        // puis du restaurant au client
+                        + GeoTest.getFlightDistanceInKm(coordsResto, coordsClient));
+            } else {
+                try {
+                    // Du livreur au client, en passant par le restaurant
+                    temps = GeoTest.getTripDurationByBicycleInMinute(coordsLivreur, coordsClient, coordsResto);
+                } catch (ZeroResultsException ex) {
+                    Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, "Aucun chemin entre le livreur et le client.");
+                    continue;
+                }
+            }
+
+            // Ajoute le livreur dans la map
+            livreursParTemps.put(temps, livreur);
+        }
+
+        return livreursParTemps;
+    }
+
+    /**
+     * Récupère le produit ayant l'ID id, ou null s'il n'existe pas.
+     *
+     * @param id L'ID du produit à récupérer
+     * @return Le produit ayant l'ID id, ou null
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public Produit recupererProduit(long id) throws PersistenceException {
+        try {
+            JpaUtil.creerEntityManager();
+            ProduitDAO produitDAO = new ProduitDAO();
+            return produitDAO.findById(id);
+        } finally {
+            JpaUtil.fermerEntityManager();
+        }
+    }
+
+    /**
+     * Récupère le restaurant ayant l'ID id, ou null s'il n'existe pas.
+     *
+     * @param id L'ID du restaurant à récupérer
+     * @return Le restaurant ayant l'ID id, ou null
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public Restaurant recupererRestaurant(Long id) throws PersistenceException {
+        try {
+            JpaUtil.creerEntityManager();
+            RestaurantDAO restaurantDAO = new RestaurantDAO();
+            return restaurantDAO.findById(id);
+        } finally {
+            JpaUtil.fermerEntityManager();
+        }
+    }
+
+    /**
+     * Récupère tous les restaurants.
+     *
+     * @return la liste de tous les restaurants
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public List<Restaurant> recupererRestaurants() throws PersistenceException {
+        try {
+            JpaUtil.creerEntityManager();
+            RestaurantDAO restaurantDAO = new RestaurantDAO();
+            return restaurantDAO.findAll();
+        } finally {
+            JpaUtil.fermerEntityManager();
+        }
+    }
+
+    /**
+     * Marque une commande comme étant terminée. Met à jour la date de fin de
+     * livraison.
+     *
+     * @param commande La commande à terminer.
+     * @throws CommandeMalFormeeException
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public void terminerCommande(Commande commande) throws PersistenceException {
+        try {
+            JpaUtil.creerEntityManager();
+            JpaUtil.ouvrirTransaction();
+
+            CommandeDAO commandeDAO = new CommandeDAO();
+            commandeDAO.validerCommande(commande);
+
+            LivreurDAO livreurDAO = new LivreurDAO();
+            livreurDAO.terminerCommandeEnCours(commande.getLivreur());
+
+            JpaUtil.validerTransaction();
+        } finally {
+            JpaUtil.annulerTransaction();
+            JpaUtil.fermerEntityManager();
+        }
+    }
+
+    /**
+     * Vérifie la validité d'une commande, c'est-à-dire si tous les produits
+     * proviennent du même restaurant.
+     *
+     * @param panier Le panier à valider
+     * @return L'ID du restaurant qui vend ces produits
+     * @throws CommandeMalFormeeException Si la commande n'est pas valide.
+     * L'exception contient le message d'erreur avec les détails.
+     * @throws PersistenceException Si une exception de persistence intervient
+     */
+    public Restaurant validerPanier(List<ProduitCommande> panier) throws CommandeMalFormeeException, PersistenceException {
+        if (panier.isEmpty()) {
+            throw new CommandeMalFormeeException("Une commande doit comporter au moins un produit !");
+        }
+        try {
+            JpaUtil.creerEntityManager();
+
+            RestaurantDAO restaurantDAO = new RestaurantDAO();
+
+            Long idRestaurant = -1L;
+            for (ProduitCommande pc : panier) {
+                Long id = restaurantDAO.getRestaurantIdByProduit(pc.getProduit().getId());
+                if (idRestaurant < 0) {
+                    idRestaurant = id;
+                } else if (pc.getQuantity() <= 0) {
+                    throw new CommandeMalFormeeException("La quantité de chaque produit doit être strictement positive !");
+                } else if (!Objects.equals(id, idRestaurant)) {
+                    throw new CommandeMalFormeeException("Les produits de cette commande n'appartiennent pas tous au même restaurant !");
+                }
+            }
+            return restaurantDAO.findById(idRestaurant);
+        } finally {
             JpaUtil.fermerEntityManager();
         }
     }

@@ -12,6 +12,7 @@ import javax.persistence.RollbackException;
  * configuration indiquée dans le fichier persistence.xml du projet.
  *
  * @author DASI Team
+ * @author B3233 : Rollback si EntityManager fermé avec transaction encore active
  */
 public class JpaUtil {
 
@@ -104,9 +105,18 @@ public class JpaUtil {
      */
     public static void fermerEntityManager() {
         log("Fermeture du contexte de persistance");
-        EntityManager em = threadLocalEntityManager.get();
-        em.close();
-        threadLocalEntityManager.set(null);
+        try {
+            EntityManager em = threadLocalEntityManager.get();
+            if (em.getTransaction().isActive()) {
+                log("Transaction ouverte : annulation effective de la transaction (rollback d'une transaction active)");
+                em.getTransaction().rollback();
+            }
+            em.close();
+            threadLocalEntityManager.set(null);
+        } catch (Exception ex) {
+            log("Erreur lors de la validation (commit) de la transaction");
+            throw ex;
+        }
     }
 
     /**
@@ -149,7 +159,7 @@ public class JpaUtil {
      */
     public static void annulerTransaction() {
         try {
-            //log("Annulation de la transaction (rollback)");
+            log("Annulation de la transaction (rollback)");
 
             EntityManager em = threadLocalEntityManager.get();
             if (em.getTransaction().isActive()) {

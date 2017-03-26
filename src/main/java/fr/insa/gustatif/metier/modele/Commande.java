@@ -22,9 +22,9 @@ public class Commande implements Serializable {
     private Restaurant restaurant;
     @OneToOne
     private Client client;
-    @Temporal(javax.persistence.TemporalType.DATE)
+    @Temporal(javax.persistence.TemporalType.TIMESTAMP)
     private Date dateDeCommande;
-    @Temporal(javax.persistence.TemporalType.DATE)
+    @Temporal(javax.persistence.TemporalType.TIMESTAMP)
     private Date dateDeFin;
     private Double prix;
     private Double poids;

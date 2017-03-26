@@ -138,7 +138,7 @@ public class SimulationAdmin {
             System.out.println(enCours);
 
             if ("o".equals(Saisie.lireChaine("Valider la commande ? (o / n) "))) {
-                serviceMetier.validerCommande(enCours);
+                serviceMetier.terminerCommande(enCours);
                 System.out.println("La commande a bien été marquée livrée.");
             } else {
                 System.out.println("Action annulée.");
@@ -330,7 +330,7 @@ public class SimulationAdmin {
             System.out.println("Cet #ID n'est pas celui d'une commande livrée par drône à valider.");
         } else {
             if ("o".equals(Saisie.lireChaine("Valider la commande ? (o / n) "))) {
-                serviceMetier.validerCommande(commande);
+                serviceMetier.terminerCommande(commande);
                 System.out.println("La commande a bien été marquée livrée.");
             } else {
                 System.out.println("Action annulée.");
