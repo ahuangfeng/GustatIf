@@ -14,6 +14,12 @@ public class ClientDAO implements BasicDAO<Client>, EmailDAO<Client> {
         throw new UnsupportedOperationException("Utiliser la méthode creerClient() pour créer un client.");
     }
     
+    /**
+     * NE PAS UTILISER CETTE METHODE, UTILISER LES ALTERNATIVES DE ClientDAO
+     * @param client
+     * @param id
+     * @return 
+     */
     @Override
     public boolean modifier(Client client, long id) {
         throw new UnsupportedOperationException("Utiliser la méthode modifierClient() pour modifier un client.");
