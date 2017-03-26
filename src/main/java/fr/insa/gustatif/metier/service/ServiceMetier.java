@@ -2,7 +2,6 @@ package fr.insa.gustatif.metier.service;
 
 import com.google.maps.errors.NotFoundException;
 import com.google.maps.errors.OverDailyLimitException;
-import com.google.maps.errors.ZeroResultsException;
 import com.google.maps.model.LatLng;
 import fr.insa.gustatif.dao.JpaUtil;
 import fr.insa.gustatif.dao.DroneDAO;
@@ -34,7 +33,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.PersistenceException;

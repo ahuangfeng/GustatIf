@@ -6,7 +6,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Cette classe initialisation la BDD. Elle procède en la vidant intégralement,
+ * Classe d'initialisation de la BDD. Elle procède en la vidant intégralement,
  * puis en la remplissant des données fournies dans le sujet, et en peuplant les
  * employés.
  */
