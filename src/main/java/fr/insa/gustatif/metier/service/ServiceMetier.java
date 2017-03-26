@@ -491,8 +491,9 @@ public class ServiceMetier {
      * Méthode privée.
      *
      * Retourne les livreurs disponibles avec le temps estimé pour la livraison.
-     * Il faut absolument qu'un EntityManager soit créé pour appeler cette
-     * méthode.
+     * <br>
+     * <strong>Il faut absolument qu'un EntityManager soit créé pour appeler
+     * cette méthode.</strong>
      *
      * @param commande Commande à livrer.
      * @return Une Map (tempsEstimé, Livreur)
@@ -658,6 +659,7 @@ public class ServiceMetier {
 
     /**
      * Supprime toutes les entités de la base de donnée.
+     *
      * @return true si la suppression a eu lieu, sinon false
      */
     public boolean viderLaBDD() {
@@ -666,34 +668,34 @@ public class ServiceMetier {
             JpaUtil.ouvrirTransaction();
 
             Logger l = Logger.getLogger(ServiceMetier.class.getName());
-            
+
             new ProduitCommandeDAO().supprimerToutesLesEntites();
             l.log(Level.INFO, "Tous les ProduitCommande ont été supprimés.");
-            
+
             new CommandeDAO().supprimerToutesLesEntites();
             l.log(Level.INFO, "Toutes les Commande ont été supprimées.");
-            
+
             new CyclisteDAO().supprimerToutesLesEntites();
             l.log(Level.INFO, "Tous les Cycliste ont été supprimés.");
-            
+
             new DroneDAO().supprimerToutesLesEntites();
             l.log(Level.INFO, "Tous les Drone ont été supprimés.");
-            
+
             new LivreurDAO().supprimerToutesLesEntites();
             l.log(Level.INFO, "Tous les Livreur ont été supprimés.");
-            
+
             new ClientDAO().supprimerToutesLesEntites();
             l.log(Level.INFO, "Tous les Client ont été supprimés.");
-            
+
             new GestionnaireDAO().supprimerToutesLesEntites();
             l.log(Level.INFO, "Tous les Gestionnaire ont été supprimés.");
-            
+
             new RestaurantDAO().supprimerToutesLesEntites();
             l.log(Level.INFO, "Tous les Restaurant ont été supprimés.");
 
             new ProduitDAO().supprimerToutesLesEntites();
             l.log(Level.INFO, "Tous les Produit ont été supprimés.");
-            
+
             JpaUtil.validerTransaction();
             return true;
         } catch (PersistenceException ex) {
