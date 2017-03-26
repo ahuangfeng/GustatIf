@@ -30,8 +30,11 @@ import fr.insa.gustatif.util.GeoTest;
 import fr.insa.gustatif.util.Saisie;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.LockModeType;
@@ -339,27 +342,45 @@ public class ServiceMetier {
 
         try {
             JpaUtil.creerEntityManager();
+            JpaUtil.ouvrirTransaction();
+
+            // Crée la commande
+            Commande commande = new Commande(client, new Date(), null, listeProduits, resto);
+
+            // Récupère les livreurs disponibles
+            Map<Double, Livreur> livreurs = recupererLivreursParTemps(commande);
 
             // Essaie d'assigner un livreur
-            for (int nbEssaisRestants = 10; nbEssaisRestants > 0; nbEssaisRestants--) {
-                try {
-                    JpaUtil.ouvrirTransaction();
+            LivreurDAO livreurDAO = new LivreurDAO();
+            while (null == commande.getLivreur() && !livreurs.isEmpty()) {
+                for (Iterator<Map.Entry<Double, Livreur>> it = livreurs.entrySet().iterator(); it.hasNext();) {
+                    Map.Entry<Double, Livreur> entry = it.next();
+                    Livreur livreur = entry.getValue();
 
-                    CommandeDAO commandeDAO = new CommandeDAO();
-                    Commande commande = new Commande(client, new Date(), null, listeProduits, resto);
-                    commandeDAO.creer(commande);
+                    // Si le livreur est dispo, on le réserve
+                    livreurDAO.rafraichir(livreur);
+                    if (livreur.getDisponible()) {
+                        livreur.setDisponible(false);
 
-                    assignerLivreur(commande);
+                        // C'est notre livreur
+                        // Persiste la commande
+                        CommandeDAO commandeDAO = new CommandeDAO();
+                        commande.setLivreur(livreur);
+                        commandeDAO.creer(commande);
 
-                    ClientDAO clientDAO = new ClientDAO();
-                    clientDAO.ajouterCommande(client, commande);
+                        // Ajoute la commande au client
+                        ClientDAO clientDAO = new ClientDAO();
+                        clientDAO.ajouterCommande(client, commande);
 
-                    JpaUtil.validerTransaction();
-                    return commande;
-                } catch (OptimisticLockException | RollbackException e) {
-                    Logger.getLogger(ServiceMetier.class.getName()).log(Level.SEVERE, "Livreur non assigné, nouvelle tentative.");
-                    JpaUtil.annulerTransaction();
-                    // Un nouvel essaie va se lancer
+                        // Assigne la commande au livreur
+                        livreur.setCommandeEnCours(commande);
+                        livreurDAO.modifier(livreur, livreur.getId());
+
+                        JpaUtil.validerTransaction();
+                        return commande;
+                    } else { // Si le livreur n'est pas dispo, on l'enlève
+                        it.remove();
+                    }
                 }
             }
 
@@ -376,13 +397,13 @@ public class ServiceMetier {
      * TODO : qu'est-ce qui se passe si le livreur a des commandes en cours? on
      * lui assigne aussi? et Difference entre getDisponible et
      *
-     * PARLER DU FAIT QU'IL FAUT UNE TRANSACTION DEJA OUVERTE
+     * PARLER DU FAIT QU'IL FAUT UN ENTITYMANAGER DEJA OUVERT
      *
      * @param commande
-     * @return
+     * @return TODO
      * @throws AucunLivreurDisponibleException
      */
-    private boolean assignerLivreur(Commande commande) throws AucunLivreurDisponibleException, OverDailyLimitException, CommandeMalFormeeException {
+    private Map<Double, Livreur> recupererLivreursParTemps(Commande commande) throws AucunLivreurDisponibleException, OverDailyLimitException, CommandeMalFormeeException {
         if (null == commande.getClient()) {
             throw new CommandeMalFormeeException("Le client n'est pas défini.");
         }
@@ -394,11 +415,10 @@ public class ServiceMetier {
         LatLng coordsClient = new LatLng(commande.getClient().getLatitude(), commande.getClient().getLongitude());
         LatLng coordsResto = new LatLng(commande.getRestaurant().getLatitude(), commande.getRestaurant().getLongitude());
 
-        // Cherche le meilleur livreur
+        // Tri les livreurs par temps pour livrer la commande
         LivreurDAO livreurDAO = new LivreurDAO();
         List<Livreur> livreursDispo = livreurDAO.recupererCapablesDeLivrer(commande.getPoids());
-        Livreur meilleurLivreur = null;
-        double tempsMin = -1.;
+        Map<Double, Livreur> livreursParTemps = new TreeMap<>();
         for (Livreur livreur : livreursDispo) {
             LatLng coordsLivreur = new LatLng(livreur.getLatitude(), livreur.getLongitude());
 
@@ -420,29 +440,11 @@ public class ServiceMetier {
                 }
             }
 
-            // Garde le livreur s'il met le moins de temps
-            if (tempsMin < 0 || tempsMin > temps) {
-                tempsMin = temps;
-                meilleurLivreur = livreur;
-            }
+            // Ajoute le livreur dans la map
+            livreursParTemps.put(temps, livreur);
         }
 
-        // S'il n'y a pas de livreur disponible, retourne une exception
-        if (null == meilleurLivreur) {
-            throw new AucunLivreurDisponibleException();
-        }
-
-        // Assigne le livreur à la commande
-        CommandeDAO commandeDAO = new CommandeDAO();
-        commande.setLivreur(meilleurLivreur);
-        commandeDAO.modifier(commande, commande.getId());
-
-        // Assigne la commande au livreur
-        meilleurLivreur.setCommandeEnCours(commande);
-        livreurDAO.modifier(meilleurLivreur, meilleurLivreur.getId());
-
-        // Tout s'est bien passé
-        return true;
+        return livreursParTemps;
     }
 
     /**

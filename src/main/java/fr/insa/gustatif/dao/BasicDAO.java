@@ -3,7 +3,6 @@ package fr.insa.gustatif.dao;
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
 import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
 import javax.persistence.NoResultException;
 import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceException;
@@ -11,19 +10,23 @@ import javax.persistence.Query;
 
 public interface BasicDAO<T> {
 
-    default public void creer(T instance) {
+    default public void creer(T entity) {
         EntityManager em = JpaUtil.obtenirEntityManager();
-        em.persist(instance);
+        em.persist(entity);
     }
 
-    default public boolean modifier(T instance, long id) throws PersistenceException {
+    default public boolean modifier(T entity, long id) throws PersistenceException {
         EntityManager em = JpaUtil.obtenirEntityManager();
-        em.lock(instance, LockModeType.READ);
         if (exists(id)) {
-            em.merge(instance);
+            em.merge(entity);
             return true;
         }
         return false;
+    }
+
+    default public void rafraichir(T entity) throws PersistenceException {
+        EntityManager em = JpaUtil.obtenirEntityManager();
+        em.refresh(entity);
     }
 
     default public T findById(long id) {

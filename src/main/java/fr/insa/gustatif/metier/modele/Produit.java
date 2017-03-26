@@ -5,7 +5,6 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.Version;
 
 @Entity
 public class Produit implements Serializable {
@@ -16,16 +15,6 @@ public class Produit implements Serializable {
     private String description;
     private Double poids;
     private Double prix;
-    @Version
-    Integer version;
-
-    public Integer getVersion() {
-        return version;
-    }
-
-    public void setVersion(Integer version) {
-        this.version = version;
-    }
 
     public Produit() {
     }

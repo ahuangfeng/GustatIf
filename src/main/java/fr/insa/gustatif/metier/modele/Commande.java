@@ -12,7 +12,6 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Temporal;
-import javax.persistence.Version;
 
 @Entity
 public class Commande implements Serializable {
@@ -29,17 +28,7 @@ public class Commande implements Serializable {
     private Date dateDeFin;
     private Double prix;
     private Double poids;
-    
-    @Version
-    Integer version;
-
-    public Integer getVersion() {
-        return version;
-    }
-
-    public void setVersion(Integer version) {
-        this.version = version;
-    }
+    private Double tempsEstime;
 
     @OneToMany(cascade = javax.persistence.CascadeType.ALL)
     private List<ProduitCommande> produitsCommande;
@@ -63,6 +52,7 @@ public class Commande implements Serializable {
             this.prix += produitCommande.getProduit().getPrix() * produitCommande.getQuantity();
             this.poids += produitCommande.getProduit().getPoids() * produitCommande.getQuantity();
         }
+        this.tempsEstime = null;
     }
 
     public Long getId() {
@@ -99,6 +89,10 @@ public class Commande implements Serializable {
 
     public Livreur getLivreur() {
         return livreur;
+    }
+
+    public Double getTempsEstime() {
+        return tempsEstime;
     }
 
     public void setRestaurant(Restaurant restaurant) {

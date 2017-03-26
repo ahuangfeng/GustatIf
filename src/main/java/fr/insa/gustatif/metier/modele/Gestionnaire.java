@@ -6,7 +6,6 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.Version;
 
 /**
  *
@@ -20,16 +19,6 @@ public class Gestionnaire implements Serializable {
     private String prenom;
     @Column(unique = true)
     private String mail;
-    @Version
-    Integer version;
-
-    public Integer getVersion() {
-        return version;
-    }
-
-    public void setVersion(Integer version) {
-        this.version = version;
-    }
 
     protected Gestionnaire() {
     }

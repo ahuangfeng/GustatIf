@@ -20,7 +20,7 @@ public class Drone extends Livreur implements Serializable {
     }
 
     public Drone(Integer vitesse, Integer capaciteMax, Boolean disponible, Double latitude, Double longitude) {
-        super(capaciteMax, disponible, longitude, latitude);
+        super(capaciteMax, disponible, latitude, longitude);
         this.vitesse = vitesse;
     }
 

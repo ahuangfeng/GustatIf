@@ -8,32 +8,21 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
-import javax.persistence.Version;
 
 @Entity
 public class Restaurant implements Serializable {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     private String denomination;
     private String description;
     private String adresse;
-    private Double longitude;
     private Double latitude;
-    @Version
-    Integer version;
-
-    public Integer getVersion() {
-        return version;
-    }
-
-    public void setVersion(Integer version) {
-        this.version = version;
-    }
-
+    private Double longitude;
     @OneToMany
     private List<Produit> produits;
-    
+
     protected Restaurant() {
         this.produits = new ArrayList<>();
     }
@@ -42,8 +31,8 @@ public class Restaurant implements Serializable {
         this.denomination = denomination;
         this.description = description;
         this.adresse = adresse;
-        this.longitude = null;
         this.latitude = null;
+        this.longitude = null;
         this.produits = new ArrayList<>();
     }
 
@@ -63,12 +52,12 @@ public class Restaurant implements Serializable {
         return adresse;
     }
 
-    public Double getLongitude() {
-        return longitude;
-    }
-
     public Double getLatitude() {
         return latitude;
+    }
+
+    public Double getLongitude() {
+        return longitude;
     }
 
     public List<Produit> getProduits() {
@@ -98,6 +87,9 @@ public class Restaurant implements Serializable {
 
     @Override
     public String toString() {
-        return "Restaurant{" + "id=" + id + ", denomination=" + denomination + ", description=" + description + ", adresse=" + adresse + ", longitude=" + longitude + ", latitude=" + latitude + ", produits=" + produits + '}';
+        return "Restaurant{" + "id=" + id + ", denomination=" + denomination
+                + ", description=" + description + ", adresse=" + adresse
+                + ", latitude=" + latitude + ", longitude=" + longitude
+                + ", produits=" + produits + '}';
     }
 }

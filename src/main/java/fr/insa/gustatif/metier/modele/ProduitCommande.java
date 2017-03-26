@@ -6,7 +6,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
-import javax.persistence.Version;
 
 @Entity
 public class ProduitCommande implements Serializable {
@@ -17,16 +16,6 @@ public class ProduitCommande implements Serializable {
     @ManyToOne
     private Produit produit;
     private Integer quantity;
-    @Version
-    Integer version;
-
-    public Integer getVersion() {
-        return version;
-    }
-
-    public void setVersion(Integer version) {
-        this.version = version;
-    }
 
     public ProduitCommande(Produit produit, Integer quantity) {
         this.produit = produit;

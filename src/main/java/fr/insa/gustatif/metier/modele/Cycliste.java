@@ -20,8 +20,8 @@ public class Cycliste extends Livreur implements Serializable {
     protected Cycliste() {
     }
 
-    public Cycliste(String nom, String prenom, String mail, Integer capaciteMax, Boolean disponible, Double longitude, Double latitude) {
-        super(capaciteMax, disponible, longitude, latitude);
+    public Cycliste(String nom, String prenom, String mail, Integer capaciteMax, Boolean disponible, Double latitude, Double longitude) {
+        super(capaciteMax, disponible, latitude, longitude);
         this.nom = nom;
         this.prenom = prenom;
         this.mail = mail;

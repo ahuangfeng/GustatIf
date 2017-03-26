@@ -31,7 +31,6 @@ public class Main {
         ServiceMetier sm = new ServiceMetier();
 
         // Effectue plusieurs commandes
-        // -> passerCommande effectue une pause random
         final int NB_COMMANDES = 10;
         Restaurant r = sm.recupererRestaurant(10L);
         List<Produit> produits = r.getProduits();
@@ -51,7 +50,7 @@ public class Main {
             } catch (AucunLivreurDisponibleException ex) {
                 System.out.println("Aucun livreur.");
             } catch (OverDailyLimitException ex) {
-                System.out.println("Google API dead.");
+                System.out.println("Erreur Google API, quota expiré.");
             } catch (OptimisticLockException ex) {
                 System.out.println("OptimisticLockException, on est pas censé en avoir ici...");
             } catch (RollbackException ex) {

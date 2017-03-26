@@ -9,12 +9,9 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
-import javax.persistence.Version;
 
 @Entity
 public class Client implements Serializable {
@@ -29,16 +26,6 @@ public class Client implements Serializable {
     private String adresse;
     private Double latitude;
     private Double longitude;
-    @Version
-    Integer version;
-
-    public Integer getVersion() {
-        return version;
-    }
-
-    public void setVersion(Integer version) {
-        this.version = version;
-    }
 
     @OneToMany
     List<Commande> commandes;
@@ -48,7 +35,7 @@ public class Client implements Serializable {
     private void prepare() {
         this.mail = mail == null ? null : mail.toLowerCase();
     }
-    
+
     protected Client() {
         this.commandes = new ArrayList<>();
     }
@@ -123,6 +110,6 @@ public class Client implements Serializable {
 
     @Override
     public String toString() {
-        return "Client{" + "id=" + id + ", nom=" + nom + ", prenom=" + prenom + ", mail=" + mail + ", adresse=" + adresse + ", longitude=" + longitude + ", latitude=" + latitude + '}';
+        return "Client{" + "id=" + id + ", nom=" + nom + ", prenom=" + prenom + ", mail=" + mail + ", adresse=" + adresse + ", latitude=" + latitude + ", longitude=" + longitude + '}';
     }
 }
