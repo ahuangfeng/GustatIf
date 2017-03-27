@@ -30,14 +30,14 @@ public class GeoTest {
         try {
             GeocodingResult[] results = GeocodingApi.geocode(GEOAPI_CONTEXT, adresse).await();
             return results[0].geometry.location;
+        } catch (OverDailyLimitException ex) {
+            System.err.println("[GeoTest] Quota Google Maps dépassé, coordonnées bidon utilisée.");
+            return new LatLng(45.78126 + Math.random() / 10., 4.87221 + Math.random() / 10.);
         } catch (NotFoundException ex) {
             throw ex;
-        } catch (OverDailyLimitException ex) {
-            Logger.getLogger(GeoTest.class.getName()).log(Level.SEVERE, "Quota Google Maps dépassé, coordonnées bidon utilisée");
-            return new LatLng(45.78126 + Math.random() / 10., 4.87221 + Math.random() / 10.);
         } catch (Exception ex) {
-            Logger.getLogger(GeoTest.class.getName()).log(Level.SEVERE, null, ex);
-            return null;
+            System.err.println("[GeoTest] Adresse non reconnue.");
+            throw new NotFoundException("Adresse non reconnue par l'API Google Maps.");
         }
     }
 

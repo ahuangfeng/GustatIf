@@ -84,7 +84,14 @@ public class ServiceMetier {
             final int NB_ESSAIS = 10;
             for (int essaisRestants = 10; essaisRestants > 0; --essaisRestants) {
                 // Crée la commande
+                CommandeDAO commandeDAO = new CommandeDAO();
                 Commande commande = new Commande(client, new Date(), null, listeProduits, resto);
+                commandeDAO.creer(commande);
+
+                // Ajoute la commande au client
+                ClientDAO clientDAO = new ClientDAO();
+                clientDAO.ajouterCommande(client, commande);
+                commandeDAO.creer(commande);
 
                 // Récupère les livreurs disponibles
                 Map<Double, Livreur> livreurs = serviceTechnique.recupererLivreursParTemps(commande);
@@ -93,88 +100,82 @@ public class ServiceMetier {
                 LivreurDAO livreurDAO = new LivreurDAO();
                 while (null == commande.getLivreur() && !livreurs.isEmpty()) {
                     for (Iterator<Map.Entry<Double, Livreur>> it = livreurs.entrySet().iterator(); it.hasNext();) {
-                        Map.Entry<Double, Livreur> entry = it.next();
-                        Double tempsEstime = entry.getKey();
-                        Livreur livreur = entry.getValue();
+                        try {
+                            Map.Entry<Double, Livreur> entry = it.next();
+                            Double tempsEstime = entry.getKey();
+                            Livreur livreur = entry.getValue();
 
-                        // Si le livreur est dispo, on le réserve
-                        livreurDAO.rafraichir(livreur);
-                        if (livreur.getDisponible()) {
-                            JpaUtil.ouvrirTransaction();
+                            // Si le livreur est dispo, on le réserve
+                            livreurDAO.rafraichir(livreur);
+                            if (livreur.getDisponible()) {
+                                JpaUtil.ouvrirTransaction();
 
-                            livreurDAO.setDisponible(livreur, false);
+                                livreurDAO.setDisponible(livreur, false);
 
-                            // Persiste la commande
-                            CommandeDAO commandeDAO = new CommandeDAO();
-                            commande.setLivreur(livreur);
-                            commande.setTempsEstime(tempsEstime);
-                            commandeDAO.creer(commande);
+                                // Persiste la commande
+                                livreur.setCommandeEnCours(commande);
+                                livreurDAO.modifier(livreur, livreur.getId());
+                                commande.setLivreur(livreur);
+                                commande.setTempsEstime(tempsEstime);
+                                commandeDAO.modifier(commande, commande.getId());
 
-                            // Ajoute la commande au client
-                            ClientDAO clientDAO = new ClientDAO();
-                            clientDAO.ajouterCommande(client, commande);
-
-                            // Assigne la commande au livreur
-                            livreur.setCommandeEnCours(commande);
-                            livreurDAO.modifier(livreur, livreur.getId());
-
-                            try {
                                 JpaUtil.validerTransaction();
-                            } catch (OptimisticLockException | RollbackException ex) {
-                                JpaUtil.annulerTransaction();
-                                System.err.println("[ServiceMetier.creerCommande()] Erreur de concurrence, nouvelle tentative.");
-                                break;
-                            }
 
-                            if (livreur instanceof Cycliste) {
-                                Cycliste c = (Cycliste) livreur;
+                                if (livreur instanceof Cycliste) {
+                                    Cycliste c = (Cycliste) livreur;
 
-                                DateFormat df = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.SHORT, Locale.FRANCE);
-                                String dateCommande = df.format(commande.getDateDeCommande());
+                                    DateFormat df = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.SHORT, Locale.FRANCE);
+                                    String dateCommande = df.format(commande.getDateDeCommande());
 
-                                String infosLivreur = c.getPrenom() + " " + c.getNom().toUpperCase() + " (#" + c.getId() + ", " + c.getIdentifiant() + ")";
+                                    String infosLivreur = c.getPrenom() + " " + c.getNom().toUpperCase() + " (#" + c.getId() + ", " + c.getIdentifiant() + ")";
 
-                                String corpsMail = "Bonjour " + c.getPrenom() + "," + "\n"
-                                        + "\n"
-                                        + "Merci d'effectuer cette livraison dès maintenant, en respectant le code de la route ;-)" + "\n"
-                                        + "\n"
-                                        + "Le Chef\n"
-                                        + "\n"
-                                        + "Détails de la livraison :" + "\n"
-                                        + "  - Date / heure : " + dateCommande + "\n"
-                                        + "  - Livreur : " + infosLivreur + "\n"
-                                        + "  - Restaurant : " + commande.getRestaurant().getDenomination() + "\n"
-                                        + "      -> " + commande.getRestaurant().getAdresse() + "\n"
-                                        + "  - Client : " + "\n"
-                                        + "      -> " + client.getPrenom() + " " + client.getNom().toUpperCase() + "\n"
-                                        + "      -> " + client.getAdresse() + "\n"
-                                        + "\n"
-                                        + "Commande :" + "\n";
+                                    String corpsMail = "Bonjour " + c.getPrenom() + "," + "\n"
+                                            + "\n"
+                                            + "Merci d'effectuer cette livraison dès maintenant, en respectant le code de la route ;-)" + "\n"
+                                            + "\n"
+                                            + "Le Chef\n"
+                                            + "\n"
+                                            + "Détails de la livraison :" + "\n"
+                                            + "  - Date / heure : " + dateCommande + "\n"
+                                            + "  - Livreur : " + infosLivreur + "\n"
+                                            + "  - Restaurant : " + commande.getRestaurant().getDenomination() + "\n"
+                                            + "      -> " + commande.getRestaurant().getAdresse() + "\n"
+                                            + "  - Client : " + "\n"
+                                            + "      -> " + client.getPrenom() + " " + client.getNom().toUpperCase() + "\n"
+                                            + "      -> " + client.getAdresse() + "\n"
+                                            + "\n"
+                                            + "Commande :" + "\n";
 
-                                Double prixTotal = 0.;
-                                for (ProduitCommande produit : commande.getProduits()) {
-                                    Integer q = produit.getQuantity();
-                                    String d = produit.getProduit().getDenomination();
-                                    Double p = produit.getProduit().getPrix();
+                                    Double prixTotal = 0.;
+                                    for (ProduitCommande produit : commande.getProduits()) {
+                                        Integer q = produit.getQuantity();
+                                        String d = produit.getProduit().getDenomination();
+                                        Double p = produit.getProduit().getPrix();
 
-                                    corpsMail += "  - " + q + " " + d + " : " + q + " x " + p + " € \n";
+                                        corpsMail += "  - " + q + " " + d + " : " + q + " x " + p + " € \n";
 
-                                    prixTotal += p * q.doubleValue();
+                                        prixTotal += p * q.doubleValue();
+                                    }
+
+                                    corpsMail += "\n" + "TOTAL : " + prixTotal + " €";
+
+                                    String sujetMail = "Livraison n°" + commande.getId() + " à effectuer";
+                                    serviceTechnique.envoyerMail(c.getMail(), sujetMail, corpsMail);
                                 }
 
-                                corpsMail += "\n" + "TOTAL : " + prixTotal + " €";
+                                return commande;
 
-                                String sujetMail = "Livraison n°" + commande.getId() + " à effectuer";
-                                serviceTechnique.envoyerMail(c.getMail(), sujetMail, corpsMail);
+                            } else { // Si le livreur n'est pas dispo, on l'enlève
+                                it.remove();
                             }
-
-                            return commande;
-                        } else { // Si le livreur n'est pas dispo, on l'enlève
+                        } catch (OptimisticLockException | RollbackException ex) {
                             it.remove();
+                            JpaUtil.annulerTransaction();
+                            System.err.println("[ServiceMetier.creerCommande()] Erreur de concurrence, nouvelle tentative.");
                         }
                     }
                 }
-                
+
                 // S'il n'y a pas de livreur disponible
                 if (livreurs.isEmpty()) {
                     throw new AucunLivreurDisponibleException();
