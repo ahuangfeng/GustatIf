@@ -13,8 +13,6 @@ import com.google.maps.model.DirectionsRoute;
 import com.google.maps.model.GeocodingResult;
 import com.google.maps.model.LatLng;
 import com.google.maps.model.TravelMode;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -100,7 +98,7 @@ public class GeoTest {
         } catch (OverDailyLimitException | ZeroResultsException ex) {
             throw ex;
         } catch (Exception ex) {
-            return null;
+            throw new ZeroResultsException("Aucun itinéraire trouvé par l'API Google Maps.");
         }
 
         if (duration) {
